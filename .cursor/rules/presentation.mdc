@@ -12,7 +12,7 @@ Read `docs/system/presentation.md` before adding or changing a screen.
 - One-off navigation and messages are an effect `Flow` from a `Channel`. The ViewModel does not take a `NavController` and does not import Compose.
 - The composable collects state with `collectAsStateWithLifecycle` and sends intents. `remember` is only for focus and gesture state.
 - iOS uses one `@Observable` screen model with `private(set)` state and a single `send` method. It calls `SharedLogic` domain types. Do not use `ObservableObject`, a Kotlin `ViewModel`, or an MVI framework.
-- Do not put screen state in the `SharedLogic` framework.
+- Do not put screen state in the `SharedLogic` framework. Fold `Outcome` into `State`. In Swift, cast `Ok.value` from `Any`. See `docs/system/errors.md`.
 
 ```kotlin
 fun onIntent(intent: AccountIntent) {

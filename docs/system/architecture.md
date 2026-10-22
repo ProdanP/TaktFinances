@@ -13,7 +13,7 @@ TaktFinances is a Kotlin Multiplatform app. Android and desktop draw with Compos
 | `:androidApp`, `:desktopApp` | Process entry, window, platform handles passed into the graph | Business rules |
 | `iosApp` | SwiftUI screens and the iOS entry | Business rules |
 
-Create `:feature:<name>` with the first real type of that feature. Do not add the module earlier. Create `:core` only when a second feature needs the same rule.
+Create `:feature:<name>` with the first real type of that feature. Do not add the module earlier. Create `:core` only when a second feature needs the same rule. `Outcome` is the exception and lives in `:core` from the first repository that can fail. See [errors.md](errors.md).
 
 A feature module compiles for the same targets as `:sharedLogic`: Android, `iosArm64`, `iosSimulatorArm64`, and JVM. `:sharedLogic` depends on it with `api`, so the `SharedLogic` framework exports the domain types to Swift. `:sharedUI` depends on the feature module directly.
 

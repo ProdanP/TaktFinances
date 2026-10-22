@@ -20,5 +20,6 @@ iOS screen → one `@Observable` model in `iosApp/iosApp/<Name>/`. It calls doma
 - [ ] Compose screen has no screen `remember` state; SwiftUI writes state only through `send`
 - [ ] Navigation and other one-off events are not stored as sticky flags on Android and desktop; iOS navigation is `NavigationStack` state
 - [ ] Screen state is not exported from `:sharedLogic`
+- [ ] A recoverable failure is `Outcome` on `State`. Swift casts `Ok.value` from `Any`
 
 Do not add Orbit, MVIKotlin, Circuit, or The Composable Architecture. They are not in the stack.

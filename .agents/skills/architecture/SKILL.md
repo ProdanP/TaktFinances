@@ -9,7 +9,7 @@ Read [docs/system/architecture.md](../../../docs/system/architecture.md) before 
 
 ## Where a type goes
 
-1. Business rule or stored fact → `:feature:<name>`, in `domain` or `data`.
+1. Business rule or stored fact → `:feature:<name>`, in `domain` or `data`. A repository, query, or HTTP call follows [docs/system/data-access.md](../../../docs/system/data-access.md). A recoverable failure returns `Outcome` as in [docs/system/errors.md](../../../docs/system/errors.md).
 2. Compose screen or state holder → `:sharedUI`, package `com.prodan.taktfinances.<name>`. Follow [docs/system/presentation.md](../../../docs/system/presentation.md): one MVI ViewModel for Android and desktop.
 3. SwiftUI screen → `iosApp/iosApp/<Name>/`, with one `@Observable` screen model.
 4. Wiring implementations together → `:sharedLogic`.

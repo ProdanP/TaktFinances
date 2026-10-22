@@ -1,0 +1,21 @@
+---
+description: SQLDelight and Ktor stay behind feature repositories
+globs: "**/data/**/*.kt,**/*.sq,**/*.sqm"
+alwaysApply: false
+---
+
+# Data access
+
+Read `docs/system/data-access.md` before adding a repository, query, migration, or HTTP call.
+
+- `:sharedLogic` creates one SQLDelight database and one Ktor `HttpClient`. A feature receives them. It does not open a connection or build a client.
+- Repository methods return domain types. SQLDelight rows, JSON bodies, and Ktor or SQLite exceptions stay in `data`.
+- Return `Outcome.Failed` for a storage or network failure. Rethrow `CancellationException`. See `docs/system/errors.md`.
+- Store money as a `Long` of minor units (`INTEGER` in SQL, a number in JSON). Do not use `REAL`, `Double`, or a decimal string.
+- Writes that must succeed together go in one SQLDelight `transaction`.
+- A new column or JSON field changes `data` only, unless the business rule changed.
+
+```kotlin
+val minorUnits = row?.minor_units ?: return Outcome.Failed(Reason.Unavailable)
+return Outcome.Ok(Money(minorUnits = minorUnits))
+```

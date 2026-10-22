@@ -17,7 +17,7 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 
 `app.cash.sqldelight`. One SQLite database for the app. Each feature owns the `.sq` files for its tables.
 
-Drivers are platform ports, created in the shells and passed into `:sharedLogic`: the Android driver, the native driver on iOS, and the JDBC driver on desktop. A repository maps generated query types to domain models. Query types stay in `data`.
+Drivers are platform ports, created in the shells and passed into `:sharedLogic`: the Android driver, the native driver on iOS, and the JDBC driver on desktop. A repository maps generated query types to domain models. Query types stay in `data`. The boundary is [data-access.md](data-access.md).
 
 Room is not used. Room 3 is still alpha, and a ledger keeps SQL as the source of the schema.
 
@@ -25,7 +25,7 @@ Room is not used. Room 3 is still alpha, and a ledger keeps SQL as the source of
 
 `io.ktor:ktor-client-core` with ContentNegotiation. JSON is `kotlinx-serialization-json`.
 
-Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response types stay in `data`.
+Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response types stay in `data`. The boundary is [data-access.md](data-access.md).
 
 ## Dependency injection — Koin
 

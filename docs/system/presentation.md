@@ -35,14 +35,17 @@ class AccountViewModel(
 
     private fun refresh() {
         viewModelScope.launch {
-            _state.update { it.copy(loading = true) }
-            _state.update { it.copy(loading = false, balance = balances.balance(it.id)) }
+            _state.update { it.copy(loading = true, error = null) }
+            when (val outcome = balances.balance(_state.value.id)) {
+                is Outcome.Ok -> _state.update { it.copy(loading = false, balance = outcome.value) }
+                is Outcome.Failed -> _state.update { it.copy(loading = false, error = outcome.reason) }
+            }
         }
     }
 }
 ```
 
-The screen collects `state` with `collectAsStateWithLifecycle` and sends intents from callbacks. `remember` is only for gesture and focus state that no other screen needs.
+The screen collects `state` with `collectAsStateWithLifecycle` and sends intents from callbacks. `remember` is only for gesture and focus state that no other screen needs. A recoverable failure stays on `State`. See [errors.md](errors.md).
 
 ## iOS — Observable screen model
 
@@ -60,10 +63,18 @@ final class AccountModel {
         self.balances = balances
     }
 
-    func send(_ intent: AccountIntent) {
+    func send(_ intent: AccountIntent) async {
         switch intent {
         case .opened:
             state.loading = true
+            let outcome = try await balances.balance(id: state.id)
+            guard let found = outcome as? OutcomeOk, let amount = found.value as? Money else {
+                state.loading = false
+                state.unavailable = true
+                return
+            }
+            state.loading = false
+            state.balance = amount
         case let .amountChanged(value):
             state.amount = value
         }
@@ -71,7 +82,7 @@ final class AccountModel {
 }
 ```
 
-The view owns the model with `@State` and reads `model.state`. It does not write state except by calling `send`.
+The view owns the model with `@State` and reads `model.state`. It does not write state except by calling `send`. `SharedLogic` exports `Outcome.Ok` as `OutcomeOk`, and `value` as `Any`, so the model casts it.
 
 ## What stays out
 
