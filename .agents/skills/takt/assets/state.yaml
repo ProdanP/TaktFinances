@@ -1,0 +1,11 @@
+id: YYYY-MM-DD-slug
+slug: slug
+depth: fix
+stage: intake
+created: YYYY-MM-DD
+approvals:
+  intent: false
+  design: false
+test_command: ""
+test_exit_code: null
+acceptance_checked: false
