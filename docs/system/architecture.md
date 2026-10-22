@@ -73,7 +73,7 @@ Leave two similar functions in place when they change for different reasons. Mat
 - One use case is one class with one public method, and only when the action has a rule, a policy, or more than one repository call. A read that returns a repository result does not get its own use case; the state holder calls the repository interface.
 - Do not add an interface that has one implementation, except a domain boundary (repository, platform port) or a fake in tests.
 - Do not add a Gradle module for a type used in one place.
-- A state holder stores screen state and calls domain types. It does not open a database or build an HTTP request.
+- A state holder stores screen state and calls domain types. Android and desktop share one MVI ViewModel. iOS uses an `@Observable` screen model. See [presentation.md](presentation.md). It does not open a database or build an HTTP request.
 - Prefer a direct function over a new type.
 
 ## Patterns

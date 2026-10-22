@@ -1,0 +1,24 @@
+---
+description: MVI ViewModel for shared Compose screens, Observable model for SwiftUI
+globs: sharedUI/**/*.kt,androidApp/**/*.kt,desktopApp/**/*.kt,iosApp/**/*.swift
+alwaysApply: false
+---
+
+# Presentation
+
+Read `docs/system/presentation.md` before adding or changing a screen.
+
+- Android and desktop share one MVI `ViewModel` in `:sharedUI`. It extends Lifecycle `ViewModel`, exposes one `StateFlow` of immutable state, and accepts events only through `onIntent`.
+- One-off navigation and messages are an effect `Flow` from a `Channel`. The ViewModel does not take a `NavController` and does not import Compose.
+- The composable collects state with `collectAsStateWithLifecycle` and sends intents. `remember` is only for focus and gesture state.
+- iOS uses one `@Observable` screen model with `private(set)` state and a single `send` method. It calls `SharedLogic` domain types. Do not use `ObservableObject`, a Kotlin `ViewModel`, or an MVI framework.
+- Do not put screen state in the `SharedLogic` framework.
+
+```kotlin
+fun onIntent(intent: AccountIntent) {
+    when (intent) {
+        AccountIntent.Opened -> refresh()
+        is AccountIntent.AmountChanged -> _state.update { it.copy(amount = intent.value) }
+    }
+}
+```
