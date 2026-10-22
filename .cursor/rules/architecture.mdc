@@ -1,0 +1,29 @@
+---
+description: Feature modules and clean-architecture boundaries for TaktFinances
+alwaysApply: true
+---
+
+# Architecture
+
+Read `docs/system/architecture.md` before adding a feature or moving a type across layers. Do not add a dependency that `docs/system/stack.md` does not list.
+
+- One feature is the Gradle module `:feature:<name>`. It contains `domain` and `data` only.
+- `domain` depends on the Kotlin standard library. `data` implements domain interfaces and is `internal`. The module exposes a public factory.
+- Compose screens live in `:sharedUI` under `com.prodan.taktfinances.<name>`. SwiftUI screens live in `iosApp/iosApp/<Name>/`. Neither imports `data`.
+- `:sharedLogic` calls feature factories and exports domain types in the `SharedLogic` iOS framework. App modules only host the process and pass platform ports in.
+- A feature does not depend on another feature. A shared type goes in `:core` only when two features must change it together.
+- Add a use case only when the action has a rule or coordinates more than one repository call.
+- Share a function only when both call sites are the same rule. Leave similar code in place when the reasons to change differ.
+- Platform APIs stay in `androidMain`, `iosMain`, or `jvmMain` behind a `commonMain` interface.
+
+```kotlin
+interface AccountRepository {
+    suspend fun balance(id: AccountId): Money
+}
+
+internal class AccountRepositoryImpl(
+    private val local: AccountStore,
+) : AccountRepository {
+    override suspend fun balance(id: AccountId): Money = local.balance(id)
+}
+```
