@@ -2,8 +2,12 @@ import SwiftUI
 import SharedLogic
 
 struct ContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityContrast) private var accessibilityContrast
     @State private var showContent = false
+
     var body: some View {
+        let palette = FinancesPalette.scheme(colorScheme: colorScheme, contrast: accessibilityContrast)
         VStack {
             Button("Click me!") {
                 withAnimation {
@@ -23,6 +27,8 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding()
+        .background(palette.background)
+        .tint(palette.primary)
     }
 }
 
