@@ -7,6 +7,16 @@ description: Run the next Takt stage for this project. Use only when the user in
 
 Takt is a bolt lifecycle. Do one stage of work per turn. This skill's `scripts/takt.py` decides which stage that is. Read `references/protocol.md` for the gate rules. Do not invent stages and do not skip a gate.
 
+## Clarifications
+
+Follow the Questions section of `references/protocol.md` before you write.
+
+Ask when an unanswered question would change the outcome, the behavior, the files you would touch, or the depth of this bolt. Ask when the request has two plausible readings, or when a constraint is missing and the repository does not already answer it.
+
+Proceed without a question when the user's message, the bolt files, or the code already decide it. Record a local choice that follows an existing project pattern as an assumption in the artifact.
+
+Ask the blocking questions in one numbered batch. Under each question, state the assumption you will use if the user tells you to proceed. Then stop. Wait for an answer, or for the user to accept those assumptions, before you write the artifact or edit code.
+
 ## Run the router
 
 Use this skill's `scripts/takt.py`. Set `--root` to the project root, the directory that contains or will contain `docs/bolts`.

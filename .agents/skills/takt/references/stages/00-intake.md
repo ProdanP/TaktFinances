@@ -9,6 +9,6 @@ Required headings, each on its own line:
 - `## Depth` — the depth already stored in `state.yaml` (`fix`, `change`, or `feature`). Do not change the depth in this file.
 - `## Summary` — one short paragraph of what this bolt will change.
 
-Ask a question only when the request is too vague to write that paragraph. Ask in one batch.
+If the summary or the depth would be a guess, follow the Questions section of `references/protocol.md` and stop before you write `intake.md`.
 
 Do not write code. When `check` prints `ok`, run `advance`, then stop.

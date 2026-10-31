@@ -22,7 +22,13 @@ A bolt is one branch-sized piece of work. The depth is chosen at the start and s
 
 ## Questions
 
-Ask only questions that would change a heading you are about to write. Ask them in one batch, then write the artifact.
+Before writing an artifact or code, check whether you are about to guess.
+
+Ask when an unanswered question would change the outcome, the behavior, the files you would touch, or whether this bolt is a fix, a change, or a feature. Ask when the request has two plausible readings. Ask when a constraint is missing and the repository does not already answer it.
+
+Proceed without a question when the user's message, the bolt files, or the code already decide it. When a local choice follows an existing pattern in the repository, record that assumption in the artifact instead of asking.
+
+Ask the blocking questions in one batch. Number them. Under each question, state the assumption you will use if the user tells you to proceed. Then stop. Wait for an answer, or for the user to accept those assumptions, before you write the artifact or edit code.
 
 ## One stage per turn
 

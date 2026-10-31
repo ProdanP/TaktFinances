@@ -7,6 +7,6 @@ Required:
 - a `## Tasks` heading on its own line
 - at least one checkbox with text, in the form `- [ ] Describe the task`
 
-Each task should be small enough to finish and check on its own. When you know the project's test command, record it on its own line as `test: <command>`.
+Each task should be small enough to finish and check on its own. If a task would hide an unanswered choice about behavior, follow the Questions section of `references/protocol.md` and stop before you write `tasks.md`. When you know the project's test command, record it on its own line as `test: <command>`.
 
 When `check` prints `ok`, run `advance`, then stop.

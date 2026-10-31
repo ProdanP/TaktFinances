@@ -1,6 +1,6 @@
 # Build
 
-Implement the bolt.
+Implement the bolt. If a task can be done in two ways that change behavior, follow the Questions section of `references/protocol.md` and stop before you edit code.
 
 On a change or feature, check off each finished item in `tasks.md` by replacing `- [ ]` with `- [x]`. At least one task must be checked before this stage can advance. A fix has no task list.
 
