@@ -8,7 +8,7 @@ Required headings, each on its own line:
 
 - `## Result` — what you actually observed
 - `## Test` — two lines, `command:` and `exit_code:`, from a command you ran in this turn. `exit_code` must be `0`
-- `## Acceptance` — one checkbox per done-when outcome, written `- [x] ...` only when the diff and the command show it is true
+- `## Acceptance` — one checkbox per done-when outcome, written `- [x] ...` only when the diff and the command show it is true. When `design.md` links a Figma frame, one acceptance line is that the implemented screens match that frame. Check it only when they do.
 
 You may also set `test_command`, `test_exit_code`, and `acceptance_checked` in `state.yaml`. Keep every other key in that file valid. The router reads `verify.md` first.
 

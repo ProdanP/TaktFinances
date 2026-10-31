@@ -38,7 +38,7 @@ Read `action`.
 
 ## After a follow stage
 
-- When the stage is `intent` or `design`, stop once the artifact is written. Tell the user what you assumed and that the bolt is waiting on approval. Do not run `advance` in this turn.
+- When the stage is `intent` or `design`, stop once the artifact is written. Tell the user what you assumed and that the bolt is waiting on approval. Do not run `advance` in this turn. On `design`, if `docs/system/figma.md` names a Figma file, draft the screens in that file before you finish the artifact.
 - For every other stage, run `check`. Fix the files or headings it reports. When `check` prints `ok`, run `advance`, then stop. Report the stage you finished and the stage now stored in `state.yaml`.
 
 ## Starting a bolt

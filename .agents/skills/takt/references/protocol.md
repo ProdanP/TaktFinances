@@ -11,13 +11,14 @@ Takt keeps intent, design, implementation, and verification in the repository. C
 A bolt is one branch-sized piece of work. The depth is chosen at the start and stored in `state.yaml`.
 
 - **fix:** intake, intent, build, verify, learn, done. No design and no task list.
-- **change:** intake, intent, design, tasks, build, verify, learn, done. Design is a short approach.
+- **change:** intake, intent, design, tasks, build, verify, learn, done. Design is a short approach. When the project names a Figma file, design drafts the screens there before build.
 - **feature:** the same stages as change. Design must include non-goals and acceptance criteria.
 
 ## Gates
 
 - After `intent.md` is written, stop. The router will not leave intent until `approve intent` has been run.
 - After `design.md` is written, stop. The router will not leave design until `approve design` has been run.
+- When `docs/system/figma.md` contains a Figma file URL, a change or feature design also drafts the screens in that file before build. `## Figma` must link a frame in that file, with a `node-id` other than the page named in `docs/system/figma.md`, or contain a line that is exactly `none` when no screen changes. The router will not leave design without that. Build implements the linked frames. A fix does not draft Figma. A project without that file skips this. Takt does not name a Figma file; the project does.
 - Verify cannot finish unless every acceptance checkbox in `verify.md` is checked and the recorded test command exited 0.
 
 ## Questions

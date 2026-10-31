@@ -9,4 +9,6 @@ Required:
 
 Each task should be small enough to finish and check on its own. If a task would hide an unanswered choice about behavior, follow the Questions section of `references/protocol.md` and stop before you write `tasks.md`. When you know the project's test command, record it on its own line as `test: <command>`.
 
+When `## Figma` in `design.md` links a frame, include a task for each screen that frame shows. When that section is `none`, do not add a screen task.
+
 When `check` prints `ok`, run `advance`, then stop.

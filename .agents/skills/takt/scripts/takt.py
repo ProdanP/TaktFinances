@@ -55,6 +55,8 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 STAGES_DIR = SKILL_ROOT / "references" / "stages"
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKBOX_RE = re.compile(r"^- \[([ xX])\]\s*(.*)$")
+FIGMA_URL_RE = re.compile(r"https://www\.figma\.com/(?:design|file)/([A-Za-z0-9]+)[^\s)]*")
+FIGMA_NODE_RE = re.compile(r"node-id=([0-9]+-[0-9]+)")
 STATE_KEYS = (
     "id",
     "slug",
@@ -174,7 +176,7 @@ def cmd_check(root: Path, bolt_arg: str | None) -> str:
     state = load_state(bolt / "state.yaml")
     if state["stage"] == "done":
         raise TaktError("bolt is complete")
-    found = problems(state, bolt)
+    found = problems(state, bolt, root)
     if found:
         raise TaktError("\n".join(found))
     return f"ok: {state['stage']}"
@@ -187,7 +189,7 @@ def cmd_advance(root: Path, bolt_arg: str | None) -> str:
     stages = DEPTHS[state["depth"]]
     if state["stage"] == "done":
         raise TaktError("bolt is complete")
-    found = problems(state, bolt)
+    found = problems(state, bolt, root)
     if found:
         raise TaktError("\n".join(found))
     current = state["stage"]
@@ -207,7 +209,7 @@ def render_next(root: Path, bolt: Path, state: dict) -> str:
         header.append("action: done")
         header.append("message: Bolt is complete.")
         return "\n".join(header)
-    found = problems(state, bolt)
+    found = problems(state, bolt, root)
     content = [item for item in found if not item.startswith("approval required:")]
     approvals = [item for item in found if item.startswith("approval required:")]
     if content:
@@ -270,13 +272,16 @@ def router_command(root: Path, bolt: Path, *extra: str) -> str:
     return " ".join(parts)
 
 
-def problems(state: dict, bolt: Path) -> list[str]:
+def problems(state: dict, bolt: Path, root: Path) -> list[str]:
     stage = state["stage"]
     if stage == "done":
         return []
     found: list[str] = []
+    figma = project_figma(root) if stage == "design" else None
     if stage == "design":
-        headings = DESIGN_HEADINGS[state["depth"]]
+        headings = list(DESIGN_HEADINGS[state["depth"]])
+        if figma is not None:
+            headings.append("## Figma")
         artifact = ARTIFACTS["design"]
     else:
         headings = HEADINGS[stage]
@@ -284,6 +289,10 @@ def problems(state: dict, bolt: Path) -> list[str]:
     text = read_artifact(bolt, artifact, found)
     if text is not None:
         found.extend(missing_headings(text, headings, artifact))
+    if stage == "design" and text is not None and figma is not None:
+        body = section(text, "## Figma")
+        if body is not None and not figma_section_ok(body, figma[0], figma[1]):
+            found.append("figma frame missing")
     if stage == "tasks" and text is not None and not any(body for _, body in checkboxes(text)):
         found.append("task missing")
     if stage == "build" and state["depth"] in ("change", "feature"):
@@ -297,6 +306,31 @@ def problems(state: dict, bolt: Path) -> list[str]:
     if stage == "design" and not state["approvals"]["design"]:
         found.append("approval required: design")
     return found
+
+
+def project_figma(root: Path) -> tuple[str, str | None] | None:
+    path = root / "docs" / "system" / "figma.md"
+    if not path.is_file():
+        return None
+    match = FIGMA_URL_RE.search(path.read_text(encoding="utf-8"))
+    if not match:
+        return None
+    node = FIGMA_NODE_RE.search(match.group(0))
+    return match.group(1), node.group(1) if node else None
+
+
+def figma_section_ok(body: str, file_key: str, page_node: str | None) -> bool:
+    if any(line.strip() == "none" for line in body.splitlines()):
+        return True
+    for match in FIGMA_URL_RE.finditer(body):
+        if match.group(1) != file_key:
+            continue
+        node = FIGMA_NODE_RE.search(match.group(0))
+        if node is None:
+            continue
+        if page_node is None or node.group(1) != page_node:
+            return True
+    return False
 
 
 def read_artifact(bolt: Path, name: str, found: list[str]) -> str | None:
