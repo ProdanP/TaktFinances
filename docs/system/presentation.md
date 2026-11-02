@@ -14,7 +14,7 @@ Three types:
 
 - `State` — one immutable `data class`. Loading, content, and error live here.
 - `Intent` — one `sealed interface` of user and lifecycle events. The only public entry is `onIntent`.
-- `Effect` — one-off work the state must not remember: navigation and short messages. A `Channel` exposed as a `Flow`. The composable collects it once. The ViewModel does not hold a `NavController`.
+- `Effect` — one-off work the state must not remember: navigation and short messages. A `Channel.BUFFERED` exposed as a `Flow`. The screen collects it with `CollectEffects`. The ViewModel does not hold a `NavController`.
 
 ```kotlin
 class AccountViewModel(
@@ -23,7 +23,7 @@ class AccountViewModel(
     private val _state = MutableStateFlow(AccountState())
     val state: StateFlow<AccountState> = _state.asStateFlow()
 
-    private val _effects = Channel<AccountEffect>()
+    private val _effects = Channel<AccountEffect>(Channel.BUFFERED)
     val effects: Flow<AccountEffect> = _effects.receiveAsFlow()
 
     fun onIntent(intent: AccountIntent) {
@@ -46,6 +46,46 @@ class AccountViewModel(
 ```
 
 The screen collects `state` with `collectAsStateWithLifecycle` and sends intents from callbacks. `remember` is only for gesture and focus state that no other screen needs. A recoverable failure stays on `State`. See [errors.md](errors.md).
+
+### Collecting effects
+
+The shell owns the routes. `App` passes a navigation callback into the screen, such as `onNavigateToHome`. The screen does not take a `NavController`.
+
+The ViewModel sends an effect from `onIntent`. The screen collects `effects` with `CollectEffects` in `com.prodan.taktfinances`. Collection runs while the lifecycle is at least `STARTED` and stops on `ON_STOP`. `Channel.BUFFERED` keeps an effect that is sent while collection is stopped. The next start delivers it. The button sends the intent. The collector calls the navigation callback.
+
+```kotlin
+private val _effects = Channel<LandingEffect>(Channel.BUFFERED)
+val effects: Flow<LandingEffect> = _effects.receiveAsFlow()
+
+fun onIntent(intent: LandingIntent) {
+    when (intent) {
+        LandingIntent.ContinueTapped -> viewModelScope.launch {
+            _effects.send(LandingEffect.OpenHome)
+        }
+    }
+}
+```
+
+```kotlin
+@Composable
+fun LandingScreen(
+    onNavigateToHome: () -> Unit,
+    viewModel: LandingViewModel = viewModel { LandingViewModel() },
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    CollectEffects(viewModel.effects) { effect ->
+        when (effect) {
+            LandingEffect.OpenHome -> onNavigateToHome()
+        }
+    }
+    LandingContent(
+        state = state,
+        onContinue = { viewModel.onIntent(LandingIntent.ContinueTapped) },
+    )
+}
+```
+
+Do not collect `effects` with a `LaunchedEffect` that ignores the lifecycle. Do not call the navigation callback from the button when the ViewModel is the one that decides to navigate.
 
 ## iOS — Observable screen model
 
