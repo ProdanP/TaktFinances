@@ -14,6 +14,7 @@ kotlin {
             baseName = "SharedLogic"
             isStatic = true
             export(project(":feature:onboarding"))
+            export(project(":feature:home"))
         }
     }
     
@@ -38,6 +39,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":feature:onboarding"))
+            api(project(":feature:home"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

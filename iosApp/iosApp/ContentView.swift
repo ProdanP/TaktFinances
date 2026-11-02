@@ -1,8 +1,14 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var showHome = false
+
     var body: some View {
-        LandingView()
+        if showHome {
+            HomeView()
+        } else {
+            LandingView(onContinue: { showHome = true })
+        }
     }
 }
 
