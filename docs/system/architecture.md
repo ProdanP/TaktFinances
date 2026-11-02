@@ -52,7 +52,7 @@ Compose / SwiftUI  →  domain  ←  data
 - `data` does not import Compose, Android UI, or Swift.
 - Platform APIs stay in `androidMain`, `iosMain`, or `jvmMain` and implement an interface declared in `commonMain`.
 
-`:sharedLogic` is the only place that builds the graph. It may use Koin to do that. Shells pass in platform ports (a file path, a database driver). They do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Screens and SwiftUI receive already-built domain types through constructors.
+`:sharedLogic` is the only place that builds the data and domain graph. It may use Koin to do that (`initKoin` plus `platformModule` for the SQLDelight driver). Shells start Koin and may add a presentation `uiModule`; they do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Compose screens resolve ViewModels with `koinViewModel()`. SwiftUI models take domain types from `KoinInjector`.
 
 ## Orthogonality
 

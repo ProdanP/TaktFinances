@@ -40,6 +40,7 @@ kotlin {
             api(project(":sharedLogic"))
             implementation(project(":feature:onboarding"))
             implementation(project(":feature:home"))
+            implementation(project(":feature:accounts"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -51,6 +52,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

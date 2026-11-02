@@ -1,0 +1,16 @@
+CREATE TABLE account (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  minor_units INTEGER NOT NULL
+);
+
+selectAllNewestFirst:
+SELECT *
+FROM account
+ORDER BY rowid DESC;
+
+insert:
+INSERT INTO account(id, name, type, currency, minor_units)
+VALUES (?, ?, ?, ?, ?);

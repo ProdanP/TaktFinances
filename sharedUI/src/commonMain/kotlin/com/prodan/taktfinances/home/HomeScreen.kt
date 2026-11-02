@@ -37,15 +37,18 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prodan.taktfinances.accounts.AccountsScreen
 import com.prodan.taktfinances.home.domain.HomeDestination
 
 @Composable
 fun HomeScreen(
+    onNavigateToAddAccount: () -> Unit,
     viewModel: HomeViewModel = viewModel { HomeViewModel() },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     HomeContent(
         state = state,
+        onNavigateToAddAccount = onNavigateToAddAccount,
         onDestinationSelected = { destination ->
             viewModel.onIntent(HomeIntent.DestinationSelected(destination))
         },
@@ -56,6 +59,7 @@ fun HomeScreen(
 @Composable
 internal fun HomeContent(
     state: HomeState,
+    onNavigateToAddAccount: () -> Unit,
     onDestinationSelected: (HomeDestination) -> Unit,
 ) {
     BoxWithConstraints(
@@ -70,14 +74,17 @@ internal fun HomeContent(
         when (widthSizeClass) {
             WindowWidthSizeClass.Compact -> CompactHome(
                 state = state,
+                onNavigateToAddAccount = onNavigateToAddAccount,
                 onDestinationSelected = onDestinationSelected,
             )
             WindowWidthSizeClass.Medium -> MediumHome(
                 state = state,
+                onNavigateToAddAccount = onNavigateToAddAccount,
                 onDestinationSelected = onDestinationSelected,
             )
             else -> ExpandedHome(
                 state = state,
+                onNavigateToAddAccount = onNavigateToAddAccount,
                 onDestinationSelected = onDestinationSelected,
             )
         }
@@ -87,11 +94,13 @@ internal fun HomeContent(
 @Composable
 private fun CompactHome(
     state: HomeState,
+    onNavigateToAddAccount: () -> Unit,
     onDestinationSelected: (HomeDestination) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DestinationMock(
-            title = state.selected.title,
+        DestinationBody(
+            destination = state.selected,
+            onNavigateToAddAccount = onNavigateToAddAccount,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
@@ -112,6 +121,7 @@ private fun CompactHome(
 @Composable
 private fun MediumHome(
     state: HomeState,
+    onNavigateToAddAccount: () -> Unit,
     onDestinationSelected: (HomeDestination) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
@@ -125,8 +135,9 @@ private fun MediumHome(
                 )
             }
         }
-        DestinationMock(
-            title = state.selected.title,
+        DestinationBody(
+            destination = state.selected,
+            onNavigateToAddAccount = onNavigateToAddAccount,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
@@ -137,6 +148,7 @@ private fun MediumHome(
 @Composable
 private fun ExpandedHome(
     state: HomeState,
+    onNavigateToAddAccount: () -> Unit,
     onDestinationSelected: (HomeDestination) -> Unit,
 ) {
     PermanentNavigationDrawer(
@@ -156,9 +168,31 @@ private fun ExpandedHome(
             }
         },
     ) {
-        DestinationMock(
-            title = state.selected.title,
+        DestinationBody(
+            destination = state.selected,
+            onNavigateToAddAccount = onNavigateToAddAccount,
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun DestinationBody(
+    destination: HomeDestination,
+    onNavigateToAddAccount: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (destination) {
+        HomeDestination.MyFinances -> Box(modifier = modifier) {
+            AccountsScreen(
+                onNavigateToAddAccount = onNavigateToAddAccount,
+            )
+        }
+        HomeDestination.Dashboard,
+        HomeDestination.Profile,
+        -> DestinationMock(
+            title = destination.title,
+            modifier = modifier,
         )
     }
 }

@@ -4,14 +4,10 @@ struct LandingView: View {
     var onContinue: () -> Void = {}
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var model: LandingModel = LandingModel()
 
     var body: some View {
-        let palette = FinancesPalette.scheme(
-            colorScheme: colorScheme,
-            contrast: colorSchemeContrast
-        )
+        let palette = FinancesPalette.scheme(colorScheme: colorScheme)
         VStack(spacing: 24) {
             Text(model.state.title)
                 .font(.title)
