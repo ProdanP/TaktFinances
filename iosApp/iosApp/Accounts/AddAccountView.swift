@@ -3,7 +3,6 @@ import SwiftUI
 
 struct AddAccountView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var model = AddAccountModel()
     private let onFinished: () -> Void
 
@@ -12,10 +11,7 @@ struct AddAccountView: View {
     }
 
     var body: some View {
-        let palette = FinancesPalette.scheme(
-            colorScheme: colorScheme,
-            contrast: colorSchemeContrast
-        )
+        let palette = FinancesPalette.scheme(colorScheme: colorScheme)
         Form {
             Picker("Type", selection: typeBinding) {
                 Text("Select").tag(Optional<AccountType>.none)

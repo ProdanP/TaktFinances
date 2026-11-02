@@ -3,14 +3,10 @@ import SwiftUI
 
 struct AccountsView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var model = AccountsModel()
 
     var body: some View {
-        let palette = FinancesPalette.scheme(
-            colorScheme: colorScheme,
-            contrast: colorSchemeContrast
-        )
+        let palette = FinancesPalette.scheme(colorScheme: colorScheme)
         NavigationStack {
             List {
                 ForEach(model.state.accounts, id: \.id.value) { account in

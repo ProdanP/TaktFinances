@@ -3,15 +3,11 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var model: HomeModel = HomeModel()
 
     var body: some View {
-        let palette = FinancesPalette.scheme(
-            colorScheme: colorScheme,
-            contrast: colorSchemeContrast
-        )
+        let palette = FinancesPalette.scheme(colorScheme: colorScheme)
         Group {
             if horizontalSizeClass == .compact {
                 compactTabs(palette: palette)
