@@ -8,6 +8,8 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 
 - Kotlin Multiplatform for Android, iOS (`iosArm64`, `iosSimulatorArm64`), and desktop (JVM 11).
 - Compose Multiplatform and Material 3 for Android and desktop UI.
+- Compose Material Icons Extended (`org.jetbrains.compose.material:material-icons-extended`, 1.7.3) for navigation and screen icons on Android and desktop.
+- Material 3 window size class (`org.jetbrains.compose.material3:material3-window-size-class`) for `WindowWidthSizeClass` on Android and desktop.
 - SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework.
 - AndroidX Activity Compose for the Android entry. AndroidX Lifecycle ViewModel and Runtime Compose for Compose state holders.
 - kotlinx.coroutines, including the Swing dispatcher on desktop.

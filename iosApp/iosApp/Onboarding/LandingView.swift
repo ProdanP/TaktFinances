@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct LandingView: View {
+    var onContinue: () -> Void = {}
+
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var model: LandingModel = LandingModel()
@@ -36,6 +38,7 @@ struct LandingView: View {
 
             Button {
                 model.send(.continueTapped)
+                onContinue()
             } label: {
                 Text("Continue")
                     .font(.body.weight(.medium))

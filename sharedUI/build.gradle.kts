@@ -39,9 +39,13 @@ kotlin {
         commonMain.dependencies {
             api(project(":sharedLogic"))
             implementation(project(":feature:onboarding"))
+            implementation(project(":feature:home"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
+            implementation(libs.compose.material3.windowSizeClass)
+            implementation(libs.compose.materialIconsExtended)
+            implementation(libs.compose.navigation)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
