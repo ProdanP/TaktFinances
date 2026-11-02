@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import com.prodan.taktfinances.theme.ThemeContrast
 
 private const val CONTRAST_LEVEL = "contrast_level"
@@ -57,10 +56,4 @@ private fun rememberThemeContrast(): ThemeContrast {
         }
     }
     return contrast
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

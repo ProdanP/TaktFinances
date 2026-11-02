@@ -26,7 +26,7 @@ struct HomeView: View {
     private func compactTabs(palette: FinancesColorScheme) -> some View {
         TabView(selection: tabSelection) {
             ForEach(model.state.destinations, id: \.name) { destination in
-                destinationMock(title: destination.title, palette: palette)
+                destinationBody(destination, palette: palette)
                     .tabItem {
                         Label(destination.title, systemImage: destination.systemImage)
                     }
@@ -36,7 +36,7 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func regularSplit(palette: FinancesColorScheme) -> some View {
+    private fun regularSplit(palette: FinancesColorScheme) -> some View {
         NavigationSplitView {
             List(selection: sidebarSelection) {
                 ForEach(model.state.destinations, id: \.name) { destination in
@@ -46,7 +46,17 @@ struct HomeView: View {
             }
             .navigationTitle("Home")
         } detail: {
-            destinationMock(title: model.state.selected.title, palette: palette)
+            destinationBody(model.state.selected, palette: palette)
+        }
+    }
+
+    @ViewBuilder
+    private func destinationBody(_ destination: HomeDestination, palette: FinancesColorScheme) -> some View {
+        switch destination {
+        case .myfinances:
+            AccountsView()
+        default:
+            destinationMock(title: destination.title, palette: palette)
         }
     }
 

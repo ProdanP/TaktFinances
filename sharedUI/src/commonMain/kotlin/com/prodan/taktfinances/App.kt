@@ -7,6 +7,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.prodan.taktfinances.accounts.AddAccountScreen
 import com.prodan.taktfinances.home.HomeScreen
 import com.prodan.taktfinances.onboarding.LandingScreen
 import com.prodan.taktfinances.theme.ThemeContrast
@@ -14,10 +15,13 @@ import com.prodan.taktfinances.theme.financesColorScheme
 
 private const val RouteLanding = "landing"
 private const val RouteHome = "home"
+private const val RouteAddAccount = "add-account"
 
 @Composable
 @Preview
-fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
+fun App(
+    contrast: ThemeContrast = ThemeContrast.Standard,
+) {
     val dark = isSystemInDarkTheme()
     MaterialTheme(colorScheme = financesColorScheme(dark = dark, contrast = contrast)) {
         val navController = rememberNavController()
@@ -35,7 +39,16 @@ fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
                 )
             }
             composable(RouteHome) {
-                HomeScreen()
+                HomeScreen(
+                    onNavigateToAddAccount = {
+                        navController.navigate(RouteAddAccount)
+                    },
+                )
+            }
+            composable(RouteAddAccount) {
+                AddAccountScreen(
+                    onBack = { navController.popBackStack() },
+                )
             }
         }
     }

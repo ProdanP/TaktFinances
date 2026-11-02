@@ -17,9 +17,9 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 
 ## Persistence — SQLDelight
 
-`app.cash.sqldelight`. One SQLite database for the app. Each feature owns the `.sq` files for its tables.
+`app.cash.sqldelight` 2.4.1. One SQLite database for the app. Each feature owns the `.sq` files for its tables.
 
-Drivers are platform ports, created in the shells and passed into `:sharedLogic`: the Android driver, the native driver on iOS, and the JDBC driver on desktop. A repository maps generated query types to domain models. Query types stay in `data`. The boundary is [data-access.md](data-access.md).
+Drivers are platform ports, created in the shells and passed into `:sharedLogic`: `android-driver` on Android, `native-driver` on iOS, and `sqlite-driver` (JDBC) on desktop. A repository maps generated query types to domain models. Query types stay in `data`. The boundary is [data-access.md](data-access.md).
 
 Room is not used. Room 3 is still alpha, and a ledger keeps SQL as the source of the schema.
 
@@ -31,9 +31,7 @@ Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response 
 
 ## Dependency injection — Koin
 
-`io.insert-koin:koin-core`, and only in `:sharedLogic`, where the graph is built.
-
-Screens, use cases, repositories, and SwiftUI take constructor arguments. Do not call `get`, `inject`, or `koinInject` from a feature, a composable, or a Swift view.
+`io.insert-koin:koin-core` 4.2.2 in `:sharedLogic`, where the data and domain graph is built (`initKoin`, `commonModule`, expect/actual `platformModule` for the SQLDelight driver). Compose ViewModels are registered in a `uiModule` in `:sharedUI` with `viewModelOf` and resolved with `koinViewModel()` (`koin-compose-viewmodel`). Android also uses `koin-android` for `androidContext`. iOS starts Koin through `KoinInitializer` and reads graph values through `KoinInjector` (`KoinComponent` + `inject`). Do not call `get` or `inject` from a feature module.
 
 Metro and kotlin-inject are not used. Their compile-time contribution across multi-module native targets is still limited, and this app's features are separate modules compiled for iOS.
 

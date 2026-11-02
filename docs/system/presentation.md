@@ -66,6 +66,8 @@ fun onIntent(intent: LandingIntent) {
 }
 ```
 
+ViewModels that need the graph are registered in `:sharedUI` `uiModule` with `viewModelOf` and resolved with `koinViewModel()`. A ViewModel with no graph dependencies may still use `viewModel { … }`.
+
 ```kotlin
 @Composable
 fun LandingScreen(

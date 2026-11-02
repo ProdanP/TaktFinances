@@ -1,7 +1,7 @@
 id: 2026-11-02-bank-accounts
 slug: bank-accounts
 depth: feature
-stage: build
+stage: verify
 created: 2026-11-02
 approvals:
   intent: true
