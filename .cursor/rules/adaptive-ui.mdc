@@ -1,0 +1,14 @@
+---
+description: Screens must work on phones, tablets, and foldables
+globs: sharedUI/**/*.kt,androidApp/**/*.kt,desktopApp/**/*.kt,iosApp/**/*.swift
+alwaysApply: false
+---
+
+# Adaptive UI
+
+Read `docs/system/adaptive-ui.md` before adding or changing a screen layout.
+
+- Every screen targets phones, tablets, and foldables. Desktop large windows follow the same Compose layouts.
+- Layout adapts in the view. The ViewModel or Swift model does not branch on form factor.
+- Do not assume a portrait phone. Bound content width on large screens; do not stretch a phone column edge to edge.
+- Respect safe areas and insets on every size. Do not ship a phone-only layout.
