@@ -23,15 +23,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.prodan.taktfinances.CollectEffects
 import org.jetbrains.compose.resources.painterResource
 import taktfinances.sharedui.generated.resources.Res
 import taktfinances.sharedui.generated.resources.landing
 
 @Composable
 fun LandingScreen(
+    onNavigateToHome: () -> Unit,
     viewModel: LandingViewModel = viewModel { LandingViewModel() },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    CollectEffects(viewModel.effects) { effect ->
+        when (effect) {
+            LandingEffect.OpenHome -> onNavigateToHome()
+        }
+    }
     LandingContent(
         state = state,
         onContinue = { viewModel.onIntent(LandingIntent.ContinueTapped) },
