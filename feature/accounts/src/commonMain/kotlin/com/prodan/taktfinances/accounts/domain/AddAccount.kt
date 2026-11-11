@@ -2,7 +2,7 @@ package com.prodan.taktfinances.accounts.domain
 
 sealed interface AddAccountResult {
     data class Created(val account: FinanceAccount) : AddAccountResult
-    data class Invalid(val nameInvalid: Boolean, val amountInvalid: Boolean) : AddAccountResult
+    data class Invalid(val invalid: Set<FormField>) : AddAccountResult
 }
 
 class AddAccount(private val repository: AccountRepository) {
@@ -11,27 +11,34 @@ class AddAccount(private val repository: AccountRepository) {
         name: String,
         currency: Currency,
         amount: String,
+        details: AccountDetailsDraft = AccountDetailsDraft(),
     ): AddAccountResult {
-        val trimmedName = name.trim()
-        val amountMinor = parseAmountMinor(amount, currency)
-        if (trimmedName.isEmpty() || amountMinor == null) {
-            return AddAccountResult.Invalid(
-                nameInvalid = trimmedName.isEmpty(),
-                amountInvalid = amountMinor == null,
-            )
-        }
-        val account = FinanceAccount(type, trimmedName, currency, amountMinor)
+        val check = checkAccountForm(type, name, amount, details)
+        if (!check.canSave) return AddAccountResult.Invalid(check.invalid)
+        val account = FinanceAccount(
+            name = name.trim(),
+            currency = currency,
+            amountMinor = parseAmountMinor(amount)!!,
+            details = buildDetails(type, details),
+        )
         repository.add(account)
         return AddAccountResult.Created(account)
     }
 }
 
-internal fun parseAmountMinor(text: String, currency: Currency): Long? {
-    val digits = currency.minorUnitDigits
-    val pattern = if (digits == 0) Regex("""\d+""") else Regex("""\d+(\.\d{1,$digits})?""")
-    val value = text.trim()
-    if (!pattern.matches(value)) return null
-    val whole = value.substringBefore('.')
-    val fraction = value.substringAfter('.', "").padEnd(digits, '0')
-    return (whole + fraction).toLongOrNull()
+/** Builds the details of [type]; call only after [checkAccountForm] reported no invalid fields. */
+private fun buildDetails(type: AccountType, draft: AccountDetailsDraft): AccountDetails = when (type) {
+    AccountType.BankAccount -> AccountDetails.BankDetails(
+        bank = draft.bank!!,
+        kind = draft.bankAccountKind!!,
+        last4 = draft.last4.trim().ifEmpty { null },
+    )
+    AccountType.Investment -> AccountDetails.InvestmentDetails(
+        kind = draft.investmentKind!!,
+        platform = draft.platform.trim(),
+    )
+    AccountType.Loan -> AccountDetails.LoanDetails(
+        direction = draft.loanDirection!!,
+        counterparty = draft.counterparty.trim(),
+    )
 }
