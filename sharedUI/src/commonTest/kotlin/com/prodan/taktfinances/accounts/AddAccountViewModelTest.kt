@@ -1,39 +1,142 @@
 package com.prodan.taktfinances.accounts
 
+import com.prodan.taktfinances.accounts.domain.AccountDetails
 import com.prodan.taktfinances.accounts.domain.AccountType
 import com.prodan.taktfinances.accounts.domain.AddAccount
-import com.prodan.taktfinances.accounts.domain.AccountDetails
 import com.prodan.taktfinances.accounts.domain.Bank
 import com.prodan.taktfinances.accounts.domain.BankAccountKind
 import com.prodan.taktfinances.accounts.domain.Currency
+import com.prodan.taktfinances.accounts.domain.FormField
 import com.prodan.taktfinances.accounts.domain.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.LoanDirection
-import com.prodan.taktfinances.accounts.createAccountRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AddAccountViewModelTest {
     private val repository = createAccountRepository()
     private val viewModel = AddAccountViewModel(AddAccount(repository))
+    private val state get() = viewModel.state.value
+
+    private fun send(vararg intents: AddAccountIntent) = intents.forEach(viewModel::onIntent)
+
+    /** Focuses [field], applies [edit], then moves focus away. */
+    private fun editAndLeave(field: FormField, edit: AddAccountIntent) = send(
+        AddAccountIntent.FieldFocusChanged(field, true),
+        edit,
+        AddAccountIntent.FieldFocusChanged(field, false),
+    )
+
+    private fun fillBank() = send(
+        AddAccountIntent.NameChanged("Salary"),
+        AddAccountIntent.AmountChanged("2500"),
+        AddAccountIntent.BankSelected(Bank.Maib),
+        AddAccountIntent.BankAccountKindSelected(BankAccountKind.Savings),
+    )
 
     @Test
     fun startsWithBankAccountAndMdl() {
-        assertEquals(AccountType.BankAccount, viewModel.state.value.type)
-        assertEquals(Currency.MDL, viewModel.state.value.currency)
-        assertEquals("", viewModel.state.value.name)
+        assertEquals(AccountType.BankAccount, state.type)
+        assertEquals(Currency.MDL, state.currency)
+        assertEquals("", state.name)
+        assertEquals("", state.amountText)
+    }
+
+    @Test
+    fun saveIsDisabledOnOpenWithAHint() {
+        assertFalse(state.canSave)
+        assertEquals("Enter a name and amount, choose a bank and kind", state.hint)
+        assertTrue(state.visibleErrors.isEmpty())
+    }
+
+    @Test
+    fun saveIsEnabledWhenCompleteAndDisabledAfterClearingTheName() {
+        fillBank()
+        assertTrue(state.canSave)
+        assertNull(state.hint)
+
+        send(AddAccountIntent.NameChanged(""))
+        assertFalse(state.canSave)
+        assertEquals("Enter a name", state.hint)
+    }
+
+    @Test
+    fun hintShrinksWhileFilling() {
+        send(AddAccountIntent.NameChanged("Salary"), AddAccountIntent.AmountChanged("10"))
+        assertEquals("Choose a bank and kind", state.hint)
+        send(AddAccountIntent.BankSelected(Bank.Victoriabank))
+        assertEquals("Choose a kind", state.hint)
+    }
+
+    @Test
+    fun noErrorBeforeLeavingAField() {
+        send(
+            AddAccountIntent.FieldFocusChanged(FormField.Name, true),
+            AddAccountIntent.NameChanged("A"),
+            AddAccountIntent.NameChanged(""),
+        )
+        assertTrue(state.visibleErrors.isEmpty())
+    }
+
+    @Test
+    fun nameErrorAfterClearingAndLeavingThenClearsOnEdit() {
+        send(AddAccountIntent.FieldFocusChanged(FormField.Name, true), AddAccountIntent.NameChanged("A"))
+        send(AddAccountIntent.NameChanged(""))
+        // The next field reports focus before the name reports losing it.
+        send(
+            AddAccountIntent.FieldFocusChanged(FormField.Amount, true),
+            AddAccountIntent.FieldFocusChanged(FormField.Name, false),
+        )
+        assertEquals(setOf(FormField.Name), state.visibleErrors)
+        assertEquals(FormField.Amount, state.focused)
+
+        send(AddAccountIntent.NameChanged("M"))
+        assertTrue(state.visibleErrors.isEmpty())
+    }
+
+    @Test
+    fun focusWithoutEditingShowsNoError() {
+        send(
+            AddAccountIntent.FieldFocusChanged(FormField.Name, true),
+            AddAccountIntent.FieldFocusChanged(FormField.Name, false),
+        )
+        assertTrue(state.visibleErrors.isEmpty())
+    }
+
+    @Test
+    fun last4ErrorAfterLeaving() {
+        editAndLeave(FormField.Last4, AddAccountIntent.Last4Changed("12"))
+        assertEquals(setOf(FormField.Last4), state.visibleErrors)
+    }
+
+    @Test
+    fun amountIsRawWhileFocusedAndFormattedAfter() {
+        send(AddAccountIntent.FieldFocusChanged(FormField.Amount, true), AddAccountIntent.AmountChanged("2500,5"))
+        assertEquals("2500.5", state.amountText)
+        send(AddAccountIntent.FieldFocusChanged(FormField.Amount, false))
+        assertEquals("2,500.50", state.amountText)
+        send(AddAccountIntent.FieldFocusChanged(FormField.Amount, true))
+        assertEquals("2500.5", state.amountText)
+    }
+
+    @Test
+    fun amountInputIsFiltered() {
+        send(AddAccountIntent.AmountChanged("-12a.599"))
+        assertEquals("12.59", state.amount)
     }
 
     @Test
     fun editsKeepOtherFields() {
-        viewModel.onIntent(AddAccountIntent.NameChanged("Car"))
-        viewModel.onIntent(AddAccountIntent.AmountChanged("5"))
-        viewModel.onIntent(AddAccountIntent.TypeSelected(AccountType.Loan))
-        viewModel.onIntent(AddAccountIntent.CurrencySelected(Currency.EUR))
-        val state = viewModel.state.value
+        send(
+            AddAccountIntent.NameChanged("Car"),
+            AddAccountIntent.AmountChanged("5"),
+            AddAccountIntent.TypeSelected(AccountType.Loan),
+            AddAccountIntent.CurrencySelected(Currency.EUR),
+        )
         assertEquals(AccountType.Loan, state.type)
         assertEquals(Currency.EUR, state.currency)
         assertEquals("Car", state.name)
@@ -41,91 +144,72 @@ class AddAccountViewModelTest {
     }
 
     @Test
-    fun invalidSaveShowsErrorsAndClearsOnEdit() {
-        viewModel.onIntent(AddAccountIntent.AmountChanged("abc"))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
-        assertTrue(viewModel.state.value.nameInvalid)
-        assertTrue(viewModel.state.value.amountInvalid)
-        assertTrue(repository.all().isEmpty())
+    fun switchingTypeClearsDetailsAndDisablesSave() {
+        fillBank()
+        editAndLeave(FormField.Last4, AddAccountIntent.Last4Changed("04"))
+        assertEquals(setOf(FormField.Last4), state.visibleErrors)
 
-        viewModel.onIntent(AddAccountIntent.NameChanged("Main"))
-        assertFalse(viewModel.state.value.nameInvalid)
-        assertTrue(viewModel.state.value.amountInvalid)
-        viewModel.onIntent(AddAccountIntent.AmountChanged("1"))
-        assertFalse(viewModel.state.value.amountInvalid)
+        send(AddAccountIntent.TypeSelected(AccountType.Loan))
+        assertEquals("Salary", state.name)
+        assertEquals("2500", state.amount)
+        assertNull(state.details.bank)
+        assertEquals("", state.details.last4)
+        assertTrue(state.visibleErrors.isEmpty())
+        assertFalse(state.canSave)
+        assertEquals("Choose a direction, enter a counterparty", state.hint)
     }
 
     @Test
-    fun validSaveEmitsSavedAndStoresAccount() = runTest {
-        viewModel.onIntent(AddAccountIntent.TypeSelected(AccountType.Investment))
-        viewModel.onIntent(AddAccountIntent.CurrencySelected(Currency.EUR))
-        viewModel.onIntent(AddAccountIntent.InvestmentKindSelected(InvestmentKind.Crypto))
-        viewModel.onIntent(AddAccountIntent.PlatformChanged("Binance"))
-        viewModel.onIntent(AddAccountIntent.NameChanged("Brokerage"))
-        viewModel.onIntent(AddAccountIntent.AmountChanged("1500.50"))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
+    fun last4KeepsOnlyFourDigits() {
+        send(AddAccountIntent.Last4Changed("1234567890123456"))
+        assertEquals("1234", state.details.last4)
+        send(AddAccountIntent.Last4Changed("12a4"))
+        assertEquals("124", state.details.last4)
+    }
+
+    @Test
+    fun saveWhileIncompleteDoesNothing() {
+        send(AddAccountIntent.TypeSelected(AccountType.Loan), AddAccountIntent.SaveTapped)
+        assertTrue(repository.all().isEmpty())
+    }
+
+    @Test
+    fun validInvestmentSaveEmitsSaved() = runTest {
+        send(
+            AddAccountIntent.TypeSelected(AccountType.Investment),
+            AddAccountIntent.CurrencySelected(Currency.EUR),
+            AddAccountIntent.InvestmentKindSelected(InvestmentKind.Crypto),
+            AddAccountIntent.PlatformChanged("Binance"),
+            AddAccountIntent.NameChanged("Brokerage"),
+            AddAccountIntent.AmountChanged("1500.50"),
+            AddAccountIntent.SaveTapped,
+        )
         assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
         assertEquals(150050, repository.all().single().amountMinor)
     }
 
     @Test
-    fun switchingTypeKeepsCommonFieldsAndClearsDetails() {
-        viewModel.onIntent(AddAccountIntent.NameChanged("Main"))
-        viewModel.onIntent(AddAccountIntent.AmountChanged("5"))
-        viewModel.onIntent(AddAccountIntent.BankSelected(Bank.Victoriabank))
-        viewModel.onIntent(AddAccountIntent.Last4Changed("0421"))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
-        assertTrue(viewModel.state.value.detailErrors.accountKind)
-
-        viewModel.onIntent(AddAccountIntent.TypeSelected(AccountType.Loan))
-        val state = viewModel.state.value
-        assertEquals("Main", state.name)
-        assertEquals("5", state.amount)
-        assertEquals(null, state.details.bank)
-        assertEquals("", state.details.last4)
-        assertFalse(state.detailErrors.any)
-    }
-
-    @Test
-    fun last4KeepsOnlyFourDigits() {
-        viewModel.onIntent(AddAccountIntent.Last4Changed("1234567890123456"))
-        assertEquals("1234", viewModel.state.value.details.last4)
-        viewModel.onIntent(AddAccountIntent.Last4Changed("12a4"))
-        assertEquals("124", viewModel.state.value.details.last4)
-    }
-
-    @Test
-    fun detailErrorsAreShownTogetherAndClearOnEdit() {
-        viewModel.onIntent(AddAccountIntent.TypeSelected(AccountType.Loan))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
-        val state = viewModel.state.value
-        assertTrue(state.nameInvalid)
-        assertTrue(state.detailErrors.direction)
-        assertTrue(state.detailErrors.counterparty)
-
-        viewModel.onIntent(AddAccountIntent.LoanDirectionSelected(LoanDirection.Lent))
-        assertFalse(viewModel.state.value.detailErrors.direction)
-        assertTrue(viewModel.state.value.detailErrors.counterparty)
-        viewModel.onIntent(AddAccountIntent.CounterpartyChanged("Ana"))
-        assertFalse(viewModel.state.value.detailErrors.any)
-    }
-
-    @Test
-    fun missingBankIsAnErrorAndBankAccountSaves() = runTest {
-        viewModel.onIntent(AddAccountIntent.NameChanged("Salary"))
-        viewModel.onIntent(AddAccountIntent.AmountChanged("2500"))
-        viewModel.onIntent(AddAccountIntent.BankAccountKindSelected(BankAccountKind.Savings))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
-        assertTrue(viewModel.state.value.detailErrors.bank)
-        assertTrue(repository.all().isEmpty())
-
-        viewModel.onIntent(AddAccountIntent.BankSelected(Bank.Maib))
-        viewModel.onIntent(AddAccountIntent.Last4Changed("0421"))
-        viewModel.onIntent(AddAccountIntent.SaveTapped)
+    fun bankAccountSavesWithItsDetails() = runTest {
+        fillBank()
+        send(AddAccountIntent.Last4Changed("0421"), AddAccountIntent.SaveTapped)
         assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
         assertEquals(
             AccountDetails.BankDetails(Bank.Maib, BankAccountKind.Savings, "0421"),
             repository.all().single().details,
         )
+    }
+
+    @Test
+    fun loanNeedsDirectionAndCounterparty() {
+        send(
+            AddAccountIntent.TypeSelected(AccountType.Loan),
+            AddAccountIntent.NameChanged("Car"),
+            AddAccountIntent.AmountChanged("-100"),
+        )
+        assertEquals("100", state.amount)
+        send(AddAccountIntent.LoanDirectionSelected(LoanDirection.Lent))
+        assertEquals("Enter a counterparty", state.hint)
+        send(AddAccountIntent.CounterpartyChanged("Ana"))
+        assertTrue(state.canSave)
     }
 }

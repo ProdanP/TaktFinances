@@ -1,7 +1,7 @@
 package com.prodan.taktfinances.accounts.domain
 
 enum class AccountType(val title: String) {
-    BankAccount("Bank Account"),
+    BankAccount("Bank"),
     Investment("Investment"),
     Loan("Loan"),
 }

@@ -36,16 +36,3 @@ data class AccountDetailsDraft(
     val loanDirection: LoanDirection? = null,
     val counterparty: String = "",
 )
-
-data class DetailErrors(
-    val bank: Boolean = false,
-    val accountKind: Boolean = false,
-    val last4: Boolean = false,
-    val investmentKind: Boolean = false,
-    val platform: Boolean = false,
-    val direction: Boolean = false,
-    val counterparty: Boolean = false,
-) {
-    val any: Boolean
-        get() = bank || accountKind || last4 || investmentKind || platform || direction || counterparty
-}

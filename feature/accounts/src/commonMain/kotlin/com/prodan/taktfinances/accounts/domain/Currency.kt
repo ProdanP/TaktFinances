@@ -1,14 +1,15 @@
 package com.prodan.taktfinances.accounts.domain
 
-enum class Currency(val code: String, val minorUnitDigits: Int) {
-    MDL("MDL", 2),
-    USD("USD", 2),
-    EUR("EUR", 2),
-    GBP("GBP", 2),
-    RON("RON", 2),
-    CHF("CHF", 2),
-    JPY("JPY", 0),
+enum class Currency(val code: String) {
+    MDL("MDL"),
+    USD("USD"),
+    EUR("EUR"),
+    GBP("GBP"),
+    RON("RON"),
 }
+
+/** Every supported currency records amounts with exactly this many decimal places. */
+const val AMOUNT_DECIMALS: Int = 2
 
 fun currencies(): List<Currency> = Currency.entries
 

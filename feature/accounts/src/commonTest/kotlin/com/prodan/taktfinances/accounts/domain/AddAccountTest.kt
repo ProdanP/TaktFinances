@@ -59,7 +59,7 @@ class AddAccountTest {
     fun badLast4IsInvalid() {
         for (value in listOf("12", "12a4", "123", "12345", "1234567890123456")) {
             val result = invalid(addAccount(AccountType.BankAccount, "Main", Currency.MDL, "1", bankDraft.copy(last4 = value)))
-            assertTrue(result.detailErrors.last4, value)
+            assertEquals(setOf(FormField.Last4), result.invalid, value)
         }
         assertTrue(repository.added.isEmpty())
     }
@@ -67,7 +67,7 @@ class AddAccountTest {
     @Test
     fun bankAndKindAreRequired() {
         val result = invalid(addAccount(AccountType.BankAccount, "Main", Currency.MDL, "1"))
-        assertEquals(DetailErrors(bank = true, accountKind = true), result.detailErrors)
+        assertEquals(setOf(FormField.Bank, FormField.AccountKind), result.invalid)
         assertTrue(repository.added.isEmpty())
     }
 
@@ -75,13 +75,13 @@ class AddAccountTest {
     fun blankPlatformIsInvalid() {
         val draft = investmentDraft.copy(platform = "  ")
         val result = invalid(addAccount(AccountType.Investment, "Fund", Currency.EUR, "1", draft))
-        assertEquals(DetailErrors(platform = true), result.detailErrors)
+        assertEquals(setOf(FormField.Platform), result.invalid)
     }
 
     @Test
     fun investmentKindIsRequired() {
         val result = invalid(addAccount(AccountType.Investment, "Fund", Currency.EUR, "1", investmentDraft.copy(investmentKind = null)))
-        assertEquals(DetailErrors(investmentKind = true), result.detailErrors)
+        assertEquals(setOf(FormField.InvestmentKind), result.invalid)
     }
 
     @Test
@@ -99,15 +99,16 @@ class AddAccountTest {
     @Test
     fun blankCounterpartyAndMissingDirectionAreInvalid() {
         val result = invalid(addAccount(AccountType.Loan, "Car", Currency.MDL, "1", AccountDetailsDraft(counterparty = " ")))
-        assertEquals(DetailErrors(direction = true, counterparty = true), result.detailErrors)
+        assertEquals(setOf(FormField.Direction, FormField.Counterparty), result.invalid)
     }
 
     @Test
     fun severalProblemsAreReportedTogether() {
         val result = invalid(addAccount(AccountType.Loan, "  ", Currency.MDL, "abc", AccountDetailsDraft()))
-        assertTrue(result.nameInvalid)
-        assertTrue(result.amountInvalid)
-        assertEquals(DetailErrors(direction = true, counterparty = true), result.detailErrors)
+        assertEquals(
+            setOf(FormField.Name, FormField.Amount, FormField.Direction, FormField.Counterparty),
+            result.invalid,
+        )
     }
 
     @Test
@@ -124,35 +125,44 @@ class AddAccountTest {
     @Test
     fun blankNameIsInvalid() {
         val result = addAccount(AccountType.Loan, "   ", Currency.MDL, "10", loanDraft)
-        assertEquals(AddAccountResult.Invalid(nameInvalid = true, amountInvalid = false), result)
+        assertEquals(AddAccountResult.Invalid(setOf(FormField.Name)), result)
         assertTrue(repository.added.isEmpty())
     }
 
     @Test
     fun nonNumericAmountIsInvalid() {
         val result = addAccount(AccountType.Loan, "Car", Currency.MDL, "abc", loanDraft)
-        assertEquals(AddAccountResult.Invalid(nameInvalid = false, amountInvalid = true), result)
+        assertEquals(AddAccountResult.Invalid(setOf(FormField.Amount)), result)
         assertTrue(repository.added.isEmpty())
     }
 
     @Test
     fun negativeAmountIsInvalid() {
         val result = addAccount(AccountType.Loan, "Car", Currency.MDL, "-100", loanDraft)
-        assertEquals(AddAccountResult.Invalid(nameInvalid = false, amountInvalid = true), result)
+        assertEquals(AddAccountResult.Invalid(setOf(FormField.Amount)), result)
     }
 
     @Test
     fun overPreciseAmountIsInvalid() {
         val result = addAccount(AccountType.BankAccount, "Main", Currency.USD, "1.234", bankDraft)
-        assertEquals(AddAccountResult.Invalid(nameInvalid = false, amountInvalid = true), result)
+        assertEquals(AddAccountResult.Invalid(setOf(FormField.Amount)), result)
     }
 
     @Test
-    fun jpyRejectsDecimalsButAcceptsWhole() {
-        val rejected = addAccount(AccountType.BankAccount, "Main", Currency.JPY, "100.5", bankDraft)
-        assertTrue(rejected is AddAccountResult.Invalid)
-        val created = addAccount(AccountType.BankAccount, "Main", Currency.JPY, "100", bankDraft)
-        assertEquals(100, (created as AddAccountResult.Created).account.amountMinor)
+    fun everyCurrencyUsesTwoDecimals() {
+        for (currency in currencies()) {
+            val created = addAccount(AccountType.BankAccount, "Main", currency, "100.5", bankDraft)
+            assertEquals(10050, (created as AddAccountResult.Created).account.amountMinor, currency.code)
+            assertTrue(addAccount(AccountType.BankAccount, "Main", currency, "100.505", bankDraft) is AddAccountResult.Invalid)
+        }
+    }
+
+    @Test
+    fun commaAndTrailingSeparatorAreAccepted() {
+        val comma = addAccount(AccountType.BankAccount, "Main", Currency.MDL, "2500,5", bankDraft)
+        assertEquals(250050, (comma as AddAccountResult.Created).account.amountMinor)
+        val trailing = addAccount(AccountType.BankAccount, "Main", Currency.MDL, "12.", bankDraft)
+        assertEquals(1200, (trailing as AddAccountResult.Created).account.amountMinor)
     }
 
     @Test

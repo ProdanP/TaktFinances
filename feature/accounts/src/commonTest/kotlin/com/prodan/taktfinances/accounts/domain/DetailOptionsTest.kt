@@ -13,6 +13,19 @@ class DetailOptionsTest {
     }
 
     @Test
+    fun banksHaveShortNamesForBadgeLabels() {
+        assertEquals(
+            listOf("MAIB", "Victoriabank", "MICB", "ProCredit", "Mobiasbancă", "Other"),
+            banks().map { it.shortName },
+        )
+    }
+
+    @Test
+    fun accountTypesAreLabelledBankInvestmentLoan() {
+        assertEquals(listOf("Bank", "Investment", "Loan"), accountTypes().map { it.title })
+    }
+
+    @Test
     fun everyBankHasInitialsForItsBadge() {
         assertEquals(true, banks().all { it.initials.isNotBlank() })
     }
@@ -25,5 +38,11 @@ class DetailOptionsTest {
             investmentKinds().map { it.title },
         )
         assertEquals(listOf("Borrowed", "Lent"), loanDirections().map { it.title })
+    }
+
+    @Test
+    fun currenciesAreTheFiveSupportedWithMdlDefault() {
+        assertEquals(listOf("MDL", "USD", "EUR", "GBP", "RON"), currencies().map { it.code })
+        assertEquals(Currency.MDL, defaultCurrency())
     }
 }

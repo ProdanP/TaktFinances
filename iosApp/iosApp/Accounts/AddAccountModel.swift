@@ -8,8 +8,6 @@ struct AddAccountState {
     var currency: Currency = CurrencyKt.defaultCurrency()
     var name: String = ""
     var amount: String = ""
-    var nameInvalid: Bool = false
-    var amountInvalid: Bool = false
     var saved: Bool = false
 
     var banks: [Bank] = []
@@ -17,29 +15,27 @@ struct AddAccountState {
     var investmentKinds: [InvestmentKind] = []
     var loanDirections: [LoanDirection] = []
     var details = DetailsInput()
-    var detailErrors = DetailErrorFlags()
-}
 
-struct DetailErrorFlags {
-    var bank = false
-    var accountKind = false
-    var last4 = false
-    var investmentKind = false
-    var platform = false
-    var direction = false
-    var counterparty = false
+    /// Field that currently has input focus.
+    var focused: FormField?
+    /// Fields edited since they last lost focus.
+    var edited: Set<FormField> = []
+    /// Fields the user edited and then left; only these may show an error.
+    var left: Set<FormField> = []
 
-    init() {}
+    /// Shared check of the current input; refreshed by the model after every intent.
+    fileprivate(set) var check = FormCheck(invalid: [])
 
-    init(_ errors: DetailErrors) {
-        bank = errors.bank
-        accountKind = errors.accountKind
-        last4 = errors.last4
-        investmentKind = errors.investmentKind
-        platform = errors.platform
-        direction = errors.direction
-        counterparty = errors.counterparty
+    var visibleErrors: Set<FormField> { check.invalid.intersection(left) }
+    var canSave: Bool { check.canSave }
+    var hint: String? { check.hint }
+
+    /// Raw input while the amount is edited, formatted ("2,500.00") otherwise; empty when blank.
+    var amountText: String {
+        focused == .amount ? amount : (AmountInputKt.formatAmountInput(text: amount) ?? "")
     }
+
+    var summary: String? { AccountSummaryKt.accountSummary(type: type, details: details.draft) }
 }
 
 struct DetailsInput {
@@ -76,8 +72,13 @@ enum AddAccountIntent {
     case platformChanged(String)
     case loanDirectionSelected(LoanDirection)
     case counterpartyChanged(String)
+    case fieldFocusChanged(FormField, Bool)
     case saveTapped
 }
+
+private let detailFields: Set<FormField> = [
+    .bank, .accountkind, .last4, .investmentkind, .platform, .direction, .counterparty,
+]
 
 @Observable
 final class AddAccountModel {
@@ -92,6 +93,7 @@ final class AddAccountModel {
         state.bankAccountKinds = AccountKindsKt.bankAccountKinds()
         state.investmentKinds = AccountKindsKt.investmentKinds()
         state.loanDirections = AccountKindsKt.loanDirections()
+        refreshCheck()
     }
 
     func send(_ intent: AddAccountIntent) {
@@ -99,43 +101,72 @@ final class AddAccountModel {
         case let .typeSelected(type):
             state.type = type
             state.details = DetailsInput()
-            state.detailErrors = DetailErrorFlags()
+            state.edited.subtract(detailFields)
+            state.left.subtract(detailFields)
         case let .currencySelected(currency):
             state.currency = currency
-            state.amountInvalid = false
         case let .nameChanged(value):
             state.name = value
-            state.nameInvalid = false
+            typed(.name)
         case let .amountChanged(value):
-            state.amount = value
-            state.amountInvalid = false
+            state.amount = AmountInputKt.filterAmountInput(raw: value)
+            typed(.amount)
         case let .bankSelected(bank):
             state.details.bank = bank
-            state.detailErrors.bank = false
+            state.left.insert(.bank)
         case let .bankAccountKindSelected(kind):
             state.details.bankAccountKind = kind
-            state.detailErrors.accountKind = false
+            state.left.insert(.accountkind)
         case let .last4Changed(value):
             state.details.last4 = String(value.filter { $0.isASCII && $0.isNumber }.prefix(4))
-            state.detailErrors.last4 = false
+            typed(.last4)
         case let .investmentKindSelected(kind):
             state.details.investmentKind = kind
-            state.detailErrors.investmentKind = false
+            state.left.insert(.investmentkind)
         case let .platformChanged(value):
             state.details.platform = value
-            state.detailErrors.platform = false
+            typed(.platform)
         case let .loanDirectionSelected(direction):
             state.details.loanDirection = direction
-            state.detailErrors.direction = false
+            state.left.insert(.direction)
         case let .counterpartyChanged(value):
             state.details.counterparty = value
-            state.detailErrors.counterparty = false
+            typed(.counterparty)
+        case let .fieldFocusChanged(field, focused):
+            focusChanged(field, focused: focused)
         case .saveTapped:
             save()
         }
+        refreshCheck()
+    }
+
+    /// A text edit: the field's error hides until the user leaves it again.
+    private func typed(_ field: FormField) {
+        state.edited.insert(field)
+        state.left.remove(field)
+    }
+
+    private func focusChanged(_ field: FormField, focused: Bool) {
+        if focused {
+            state.focused = field
+            return
+        }
+        // Focus events can arrive in either order, so leaving never depends on which field is focused now.
+        if state.focused == field { state.focused = nil }
+        if state.edited.remove(field) != nil { state.left.insert(field) }
+    }
+
+    private func refreshCheck() {
+        state.check = FormCheckKt.checkAccountForm(
+            type: state.type,
+            name: state.name,
+            amount: state.amount,
+            details: state.details.draft
+        )
     }
 
     private func save() {
+        guard state.canSave else { return }
         let result = addAccount.invoke(
             type: state.type,
             name: state.name,
@@ -144,9 +175,7 @@ final class AddAccountModel {
             details: state.details.draft
         )
         if let invalid = result as? AddAccountResultInvalid {
-            state.nameInvalid = invalid.nameInvalid
-            state.amountInvalid = invalid.amountInvalid
-            state.detailErrors = DetailErrorFlags(invalid.detailErrors)
+            state.left.formUnion(invalid.invalid)
         } else if result is AddAccountResultCreated {
             state.saved = true
         }
