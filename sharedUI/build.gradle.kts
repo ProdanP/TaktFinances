@@ -40,6 +40,7 @@ kotlin {
             api(project(":sharedLogic"))
             implementation(project(":feature:onboarding"))
             implementation(project(":feature:home"))
+            implementation(project(":feature:accounts"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -54,6 +55,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutinesTest)
         }
     }
 }

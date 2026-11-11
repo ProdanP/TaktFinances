@@ -2,6 +2,8 @@ import SharedLogic
 import SwiftUI
 
 struct HomeView: View {
+    var onAddAccount: () -> Void = {}
+
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -20,6 +22,10 @@ struct HomeView: View {
             }
         }
         .background(palette.background)
+        .toolbar { addToolbar(for: model.state.selected) }
+        .navigationTitle(model.state.selected == .myfinances ? model.state.selected.title : "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(model.state.selected == .myfinances ? .visible : .hidden, for: .navigationBar)
     }
 
     @ViewBuilder
@@ -47,6 +53,18 @@ struct HomeView: View {
             .navigationTitle("Home")
         } detail: {
             destinationMock(title: model.state.selected.title, palette: palette)
+        }
+    }
+
+    @ToolbarContentBuilder
+    private func addToolbar(for destination: HomeDestination) -> some ToolbarContent {
+        if destination == .myfinances {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onAddAccount) {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel("Add account")
+            }
         }
     }
 

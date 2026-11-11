@@ -13,6 +13,7 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 - SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework.
 - AndroidX Activity Compose for the Android entry. AndroidX Lifecycle ViewModel and Runtime Compose for Compose state holders.
 - kotlinx.coroutines, including the Swing dispatcher on desktop.
+- kotlinx-coroutines-test for coroutine and Flow tests in `commonTest`.
 - kotlin-test, JUnit, and AndroidX test (Espresso) for tests.
 
 ## Persistence — SQLDelight
