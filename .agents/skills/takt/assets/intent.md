@@ -1,5 +1,0 @@
-# Intent
-
-## Problem
-
-## Done when

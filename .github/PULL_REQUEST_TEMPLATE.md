@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What changed, and why. Link the bolt under docs/bolts/ when this PR comes from one. -->
+<!-- What changed, and why. Link the OpenSpec change under openspec/changes/ when this PR comes from one. -->
 
 ## Platforms
 
