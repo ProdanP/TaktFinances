@@ -148,6 +148,8 @@ internal fun AddAccountContent(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(16.dp))
+                AddAccountDetails(state = state, onIntent = onIntent)
                 Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = { onIntent(AddAccountIntent.SaveTapped) },
