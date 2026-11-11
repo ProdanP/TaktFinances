@@ -1,7 +1,7 @@
 package com.prodan.taktfinances
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
@@ -25,7 +25,7 @@ private val accountRepository by lazy { createAccountRepository() }
 @Preview
 fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
     val dark = isSystemInDarkTheme()
-    MaterialTheme(colorScheme = financesColorScheme(dark = dark, contrast = contrast)) {
+    MaterialExpressiveTheme(colorScheme = financesColorScheme(dark = dark, contrast = contrast)) {
         val navController = rememberNavController()
         NavHost(
             navController = navController,
