@@ -15,6 +15,7 @@ kotlin {
             isStatic = true
             export(project(":feature:onboarding"))
             export(project(":feature:home"))
+            export(project(":feature:accounts"))
         }
     }
     
@@ -40,6 +41,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":feature:onboarding"))
             api(project(":feature:home"))
+            api(project(":feature:accounts"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
