@@ -2,7 +2,7 @@
 
 Versions live in `gradle/libs.versions.toml`. This file is the set of allowed choices. Add a library here before adding it to the version catalog. Add the dependency to a module only when a type in that module uses it.
 
-`domain` stays on the Kotlin standard library. SQLDelight, Ktor, and Koin are `data` and composition-root tools.
+`domain` stays on the Kotlin standard library. Room, Ktor, and Koin are `data` and composition-root tools.
 
 ## In use
 
@@ -16,13 +16,15 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 - kotlinx-coroutines-test for coroutine and Flow tests in `commonTest`.
 - kotlin-test, JUnit, and AndroidX test (Espresso) for tests.
 
-## Persistence — SQLDelight
+## Persistence — Room
 
-`app.cash.sqldelight` (Gradle plugin, `runtime`, and the `android-driver`, `native-driver` and `sqlite-driver` JDBC drivers). One SQLite database for the app. Each feature owns the `.sq` files for its tables.
+`androidx.room3` 3.0.x (Gradle plugin, `room3-runtime`, and `room3-compiler` through KSP) with `androidx.sqlite:sqlite-bundled`. One SQLite database for the app, the same bundled SQLite on Android, iOS and desktop.
 
-Drivers are platform ports, created in the shells and passed into `:sharedLogic`: the Android driver, the native driver on iOS, and the JDBC driver on desktop. A repository maps generated query types to domain models. Query types stay in `data`. The boundary is [data-access.md](data-access.md).
+Each feature owns the `@Entity` and `@Dao` types for its tables, in its `data.local` package, and depends on `room3-runtime` only. `:sharedLogic` declares the one `@Database` (`AppDatabase`, internal), lists every feature's entities, runs `room3-compiler` on `kspAndroid`, `kspIosArm64`, `kspIosSimulatorArm64` and `kspJvm`, and commits the exported schema under `sharedLogic/schemas/`. That schema file is the reviewed record of the database and what an auto-migration diffs against.
 
-Room is not used. Room 3 is still alpha, and a ledger keeps SQL as the source of the schema.
+The shells start the app through `startTaktOnAndroid(context)`, `startTaktOnDesktop()` and `startTaktOnIos()`, which open the database at the platform's path. Shells and Swift never see Room types. Entities and DAOs are public so `AppDatabase` can list them, and `@HiddenFromObjC` keeps them out of the iOS framework. DAO functions are `suspend` and run on the database's IO context. The boundary is [data-access.md](data-access.md).
+
+SQLDelight is not used. It was replaced once Room 3 became stable with KMP support.
 
 ## Networking — Ktor client
 

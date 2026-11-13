@@ -16,7 +16,7 @@ iOS screen → one `@Observable` model in `iosApp/iosApp/<Name>/`. It calls doma
 ## Checklist
 
 - [ ] One immutable `State`, one `Intent` (or Swift `Intent`) type, one `onIntent` or `send` entry
-- [ ] State holder calls domain types and does not import Compose, SwiftUI, SQLDelight, or Ktor
+- [ ] State holder calls domain types and does not import Compose, SwiftUI, Room, or Ktor
 - [ ] Compose screen has no screen `remember` state; SwiftUI writes state only through `send`
 - [ ] Navigation and other one-off events are not stored as sticky flags on Android and desktop. The Compose screen collects them with `CollectEffects` while the lifecycle is at least `STARTED`. iOS navigation is `NavigationStack` state
 - [ ] Screen state is not exported from `:sharedLogic`

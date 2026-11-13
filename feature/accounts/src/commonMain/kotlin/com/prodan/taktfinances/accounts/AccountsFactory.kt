@@ -1,8 +1,12 @@
 package com.prodan.taktfinances.accounts
 
-import app.cash.sqldelight.db.SqlDriver
 import com.prodan.taktfinances.accounts.data.AccountRepositoryImpl
+import com.prodan.taktfinances.accounts.data.local.FinanceAccountDao
 import com.prodan.taktfinances.accounts.domain.AccountRepository
+import kotlin.experimental.ExperimentalObjCRefinement
+import kotlin.native.HiddenFromObjC
 
-/** [driver] is the app's one database; the composition root creates its schema. */
-fun createAccountRepository(driver: SqlDriver): AccountRepository = AccountRepositoryImpl(driver)
+/** [dao] comes from the app's one database, which the composition root opens. */
+@OptIn(ExperimentalObjCRefinement::class)
+@HiddenFromObjC // Only the composition root calls this.
+fun createAccountRepository(dao: FinanceAccountDao): AccountRepository = AccountRepositoryImpl(dao)

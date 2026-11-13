@@ -1,64 +1,90 @@
 package com.prodan.taktfinances.di
 
-import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import androidx.room3.Room
 import com.prodan.taktfinances.accounts.domain.AccountDetails
 import com.prodan.taktfinances.accounts.domain.Currency
 import com.prodan.taktfinances.accounts.domain.FinanceAccount
 import com.prodan.taktfinances.accounts.domain.LoanDirection
 import com.prodan.taktfinances.core.Outcome
+import com.prodan.taktfinances.database.AppDatabase
+import com.prodan.taktfinances.database.DATABASE_NAME
+import com.prodan.taktfinances.database.LEGACY_DATABASE_NAME
+import com.prodan.taktfinances.database.buildApp
 import kotlinx.coroutines.test.runTest
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
 import org.koin.test.verify.verify
+import java.io.File
 import java.nio.file.Files
-import java.util.Properties
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+private val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
 
 class TaktGraphTest {
+    private val dir: File = Files.createTempDirectory("takt").toFile()
+
     @AfterTest
-    fun tearDown() = stopKoin()
+    fun tearDown() {
+        KoinPlatform.getKoinOrNull()?.getOrNull<AppDatabase>()?.close()
+        stopKoin()
+        dir.deleteRecursively()
+    }
 
     @OptIn(KoinExperimentalAPI::class)
     @Test
     fun modulesResolve() {
-        module { includes(databaseModule(inMemoryDriver()), accountsModule) }.verify()
+        module { includes(databaseModule(inMemoryDatabase()), accountsModule) }.verify()
     }
 
     @Test
     fun savedAccountIsReadBack() = runTest {
-        startTakt(inMemoryDriver())
+        startTakt { inMemoryDatabase() }
         val repository = AppDependencies().accountRepository
-        val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
         assertIs<Outcome.Ok<*>>(repository.add(car))
         val all = assertIs<Outcome.Ok<List<*>>>(repository.all()).value
         assertEquals(1, all.size)
     }
 
     @Test
-    fun startingTwiceKeepsTheFirstGraph() {
-        startTakt(inMemoryDriver())
+    fun startingTwiceKeepsTheFirstGraphAndDoesNotOpenAnotherDatabase() {
+        startTakt { inMemoryDatabase() }
         val first = AppDependencies().accountRepository
-        startTakt(inMemoryDriver())
+        startTakt { error("a running graph must not open another database") }
         assertEquals(first, AppDependencies().accountRepository)
     }
 
     @Test
     fun accountsSurviveReopeningTheFile() = runTest {
-        val dir = Files.createTempDirectory("takt").toFile()
-        val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
-        jvmDatabaseDriver(dir).use { startTakt(it); AppDependencies().accountRepository.add(car); stopKoin() }
-        jvmDatabaseDriver(dir).use {
-            startTakt(it)
-            val all = assertIs<Outcome.Ok<List<*>>>(AppDependencies().accountRepository.all()).value
-            assertEquals(1, all.size)
-        }
-        dir.deleteRecursively()
+        startTakt { jvmAppDatabase(dir) }
+        AppDependencies().accountRepository.add(car)
+        tearDownGraph()
+        startTakt { jvmAppDatabase(dir) }
+        val all = assertIs<Outcome.Ok<List<*>>>(AppDependencies().accountRepository.all()).value
+        assertEquals(1, all.size)
     }
 
-    private fun inMemoryDriver(): SqlDriver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY, Properties(), appSchema)
+    @Test
+    fun legacyDatabaseIsDeletedAndTheNewOneStartsEmpty() = runTest {
+        val legacy = listOf("", "-journal", "-wal", "-shm").map { File(dir, LEGACY_DATABASE_NAME + it) }
+        legacy.forEach { it.writeText("data from a pre-Room build") }
+        startTakt { jvmAppDatabase(dir) }
+        val all = assertIs<Outcome.Ok<List<*>>>(AppDependencies().accountRepository.all()).value
+        assertEquals(0, all.size)
+        legacy.forEach { assertFalse(it.exists(), "${it.name} should be deleted") }
+        assertTrue(File(dir, DATABASE_NAME).exists())
+    }
+
+    private fun tearDownGraph() {
+        KoinPlatform.getKoin().get<AppDatabase>().close()
+        stopKoin()
+    }
+
+    private fun inMemoryDatabase(): AppDatabase = Room.inMemoryDatabaseBuilder<AppDatabase>().buildApp()
 }

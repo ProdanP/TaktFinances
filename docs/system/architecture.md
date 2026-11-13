@@ -27,7 +27,13 @@ feature/<name>/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
     LoadBalance.kt            # use case, public
   data/
     AccountRepositoryImpl.kt  # internal
+    AccountRows.kt            # internal mapping between entities and domain
+    local/
+      AccountEntity.kt        # Room @Entity
+      AccountDao.kt           # Room @Dao
 ```
+
+`data` holds the repository implementation and its mapping. `data.local` holds the Room `@Entity` and `@Dao` types and nothing else. Only the repository implementation uses `data.local`.
 
 `data` is `internal`. The module exposes one public factory the composition root calls:
 

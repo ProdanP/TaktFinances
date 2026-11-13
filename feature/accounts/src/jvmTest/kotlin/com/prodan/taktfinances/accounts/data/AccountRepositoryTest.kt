@@ -1,8 +1,8 @@
 package com.prodan.taktfinances.accounts.data
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import androidx.room3.executeSQL
+import androidx.room3.useWriterConnection
 import com.prodan.taktfinances.accounts.createAccountRepository
-import com.prodan.taktfinances.accounts.data.db.AppDatabase
 import com.prodan.taktfinances.accounts.domain.AccountDetails
 import com.prodan.taktfinances.accounts.domain.Bank
 import com.prodan.taktfinances.accounts.domain.BankAccountKind
@@ -24,11 +24,13 @@ private val brokerage = FinanceAccount("Brokerage", Currency.EUR, 150050, Accoun
 private val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
 
 class AccountRepositoryTest {
-    private val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY).also { AppDatabase.Schema.create(it) }
-    private val repository = createAccountRepository(driver)
+    private val database = inMemoryAccountsDatabase()
+    private val repository = createAccountRepository(database.financeAccountDao())
 
     @AfterTest
-    fun close() = driver.close()
+    fun close() = database.close()
+
+    private suspend fun corrupt(sql: String) = database.useWriterConnection { it.executeSQL(sql) }
 
     private fun <T : Any> ok(outcome: Outcome<T>): T = assertIs<Outcome.Ok<T>>(outcome).value
 
@@ -65,20 +67,20 @@ class AccountRepositoryTest {
     @Test
     fun unknownCodeIsUnavailable() = runTest {
         ok(repository.add(salary))
-        driver.execute(null, "UPDATE finance_account SET bank = 'NOPE'", 0)
+        corrupt("UPDATE finance_account SET bank = 'NOPE'")
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
     }
 
     @Test
     fun missingDetailIsUnavailable() = runTest {
         ok(repository.add(car))
-        driver.execute(null, "UPDATE finance_account SET counterparty = NULL", 0)
+        corrupt("UPDATE finance_account SET counterparty = NULL")
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
     }
 
     @Test
     fun closedStoreIsUnavailable() = runTest {
-        driver.close()
+        database.close()
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.add(salary))
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
     }

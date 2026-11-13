@@ -1,6 +1,6 @@
 package com.prodan.taktfinances.accounts.data
 
-import com.prodan.taktfinances.accounts.data.db.Finance_account
+import com.prodan.taktfinances.accounts.data.local.FinanceAccountEntity
 import com.prodan.taktfinances.accounts.domain.AccountDetails
 import com.prodan.taktfinances.accounts.domain.AccountType
 import com.prodan.taktfinances.accounts.domain.Bank
@@ -41,46 +41,46 @@ private val LOAN_DIRECTION_CODES = mapOf(LoanDirection.Borrowed to "BORROWED", L
 /** A row that does not map back to the domain (unknown code, missing detail) is a read failure. */
 internal class UnreadableRowException(message: String) : Exception(message)
 
-internal fun FinanceAccount.toRow(): Finance_account {
+internal fun FinanceAccount.toRow(): FinanceAccountEntity {
     val bank = details as? AccountDetails.BankDetails
     val investment = details as? AccountDetails.InvestmentDetails
     val loan = details as? AccountDetails.LoanDetails
-    return Finance_account(
+    return FinanceAccountEntity(
         id = 0,
         type = TYPE_CODES.getValue(type),
         name = name,
         currency = CURRENCY_CODES.getValue(currency),
-        amount_minor = amountMinor,
+        amountMinor = amountMinor,
         bank = bank?.let { BANK_CODES.getValue(it.bank) },
-        bank_kind = bank?.let { BANK_KIND_CODES.getValue(it.kind) },
+        bankKind = bank?.let { BANK_KIND_CODES.getValue(it.kind) },
         last4 = bank?.last4,
-        investment_kind = investment?.let { INVESTMENT_KIND_CODES.getValue(it.kind) },
+        investmentKind = investment?.let { INVESTMENT_KIND_CODES.getValue(it.kind) },
         platform = investment?.platform,
-        loan_direction = loan?.let { LOAN_DIRECTION_CODES.getValue(it.direction) },
+        loanDirection = loan?.let { LOAN_DIRECTION_CODES.getValue(it.direction) },
         counterparty = loan?.counterparty,
     )
 }
 
-internal fun Finance_account.toSavedAccount(): SavedAccount {
+internal fun FinanceAccountEntity.toSavedAccount(): SavedAccount {
     val details = when (TYPE_CODES.decode(type, "type")) {
         AccountType.BankAccount -> AccountDetails.BankDetails(
             bank = BANK_CODES.decode(bank, "bank"),
-            kind = BANK_KIND_CODES.decode(bank_kind, "bank_kind"),
+            kind = BANK_KIND_CODES.decode(bankKind, "bank_kind"),
             last4 = last4,
         )
         AccountType.Investment -> AccountDetails.InvestmentDetails(
-            kind = INVESTMENT_KIND_CODES.decode(investment_kind, "investment_kind"),
+            kind = INVESTMENT_KIND_CODES.decode(investmentKind, "investment_kind"),
             platform = platform ?: throw UnreadableRowException("account $id has no platform"),
         )
         AccountType.Loan -> AccountDetails.LoanDetails(
-            direction = LOAN_DIRECTION_CODES.decode(loan_direction, "loan_direction"),
+            direction = LOAN_DIRECTION_CODES.decode(loanDirection, "loan_direction"),
             counterparty = counterparty ?: throw UnreadableRowException("account $id has no counterparty"),
         )
     }
     val account = FinanceAccount(
         name = name,
         currency = CURRENCY_CODES.decode(currency, "currency"),
-        amountMinor = amount_minor,
+        amountMinor = amountMinor,
         details = details,
     )
     return SavedAccount(id, account)

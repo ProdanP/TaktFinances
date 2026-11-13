@@ -1,39 +1,32 @@
 package com.prodan.taktfinances.di
 
-import app.cash.sqldelight.db.SqlDriver
 import com.prodan.taktfinances.accounts.createAccountRepository
+import com.prodan.taktfinances.accounts.data.local.FinanceAccountDao
 import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.db.AppDatabase
-import org.koin.mp.KoinPlatform
+import com.prodan.taktfinances.database.AppDatabase
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
 
-/** File name of the app's one SQLite database on every platform. */
-const val DATABASE_NAME: String = "takt.db"
-
-/**
- * The app database's driver. Platform drivers are created with [AppDatabase.Schema], so they
- * create the tables on first open.
- */
-internal fun databaseModule(driver: SqlDriver): Module = module {
-    single<SqlDriver> { driver }
+/** The app database and the DAOs features receive from it. */
+internal fun databaseModule(database: AppDatabase): Module = module {
+    single<AppDatabase> { database }
+    single<FinanceAccountDao> { get<AppDatabase>().financeAccountDao() }
 }
 
 internal val accountsModule: Module = module {
     single<AccountRepository> { createAccountRepository(get()) }
 }
 
-internal fun taktModules(driver: SqlDriver): List<Module> = listOf(databaseModule(driver), accountsModule)
+internal fun taktModules(database: AppDatabase): List<Module> = listOf(databaseModule(database), accountsModule)
 
 /**
  * Builds the dependency graph once per process. A second call (activity recreation, previews)
- * keeps the running graph and ignores [driver].
+ * keeps the running graph and does not open [database]. The shells call the platform entries
+ * (`startTaktOnAndroid`, `startTaktOnDesktop`, `startTaktOnIos`), so they never see Room.
  */
-fun startTakt(driver: SqlDriver) {
+internal fun startTakt(database: () -> AppDatabase) {
     if (KoinPlatform.getKoinOrNull() != null) return
-    startKoin { modules(taktModules(driver)) }
+    startKoin { modules(taktModules(database())) }
 }
-
-/** Schema of the app database, for the platform drivers. */
-internal val appSchema = AppDatabase.Schema

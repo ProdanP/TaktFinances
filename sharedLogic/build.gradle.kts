@@ -3,10 +3,16 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
-    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
 }
 
 kotlin {
+    // Room's @ConstructedBy needs an expect object (AppDatabaseConstructor).
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -46,18 +52,12 @@ kotlin {
             api(project(":feature:home"))
             api(project(":feature:accounts"))
             implementation(libs.koin.core)
+            implementation(libs.room3.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.kotlinx.coroutinesCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-        }
-        androidMain.dependencies {
-            implementation(libs.sqldelight.androidDriver)
-        }
-        iosMain.dependencies {
-            implementation(libs.sqldelight.nativeDriver)
-        }
-        jvmMain.dependencies {
-            implementation(libs.sqldelight.sqliteDriver)
         }
         jvmTest.dependencies {
             implementation(libs.koin.test)
@@ -66,12 +66,13 @@ kotlin {
     }
 }
 
-// The one app database. Each feature owns the .sq files for its tables and is listed here.
-sqldelight {
-    databases {
-        create("AppDatabase") {
-            packageName.set("com.prodan.taktfinances.db")
-            dependency(project(":feature:accounts"))
-        }
+// Room's exported schema is the reviewed record of the app database.
+room3 {
+    schemaDirectory("$projectDir/schemas")
+}
+
+dependencies {
+    listOf("kspAndroid", "kspIosArm64", "kspIosSimulatorArm64", "kspJvm").forEach {
+        add(it, libs.room3.compiler)
     }
 }
