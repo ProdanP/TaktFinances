@@ -3,12 +3,11 @@ package com.prodan.taktfinances
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.prodan.taktfinances.accounts.AddAccountScreen
-import com.prodan.taktfinances.accounts.createAccountRepository
+import com.prodan.taktfinances.di.AppDependencies
 import com.prodan.taktfinances.home.HomeScreen
 import com.prodan.taktfinances.onboarding.LandingScreen
 import com.prodan.taktfinances.theme.ThemeContrast
@@ -18,12 +17,9 @@ private const val RouteLanding = "landing"
 private const val RouteHome = "home"
 private const val RouteAddAccount = "add-account"
 
-// One repository for the app process, so it survives configuration changes.
-private val accountRepository by lazy { createAccountRepository() }
-
+/** [dependencies] come from the composition root in :sharedLogic; screens get them through constructors. */
 @Composable
-@Preview
-fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
+fun App(dependencies: AppDependencies, contrast: ThemeContrast = ThemeContrast.Standard) {
     val dark = isSystemInDarkTheme()
     MaterialExpressiveTheme(colorScheme = financesColorScheme(dark = dark, contrast = contrast)) {
         val navController = rememberNavController()
@@ -42,12 +38,13 @@ fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
             }
             composable(RouteHome) {
                 HomeScreen(
+                    accounts = dependencies.accountRepository,
                     onNavigateToAddAccount = { navController.navigate(RouteAddAccount) },
                 )
             }
             composable(RouteAddAccount) {
                 AddAccountScreen(
-                    repository = accountRepository,
+                    repository = dependencies.accountRepository,
                     onClose = { navController.popBackStack() },
                 )
             }

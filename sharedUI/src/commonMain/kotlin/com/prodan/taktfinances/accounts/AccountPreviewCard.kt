@@ -57,75 +57,22 @@ internal val AccountType.icon: ImageVector
 /** Live preview of the account being created; the amount and currency are edited in place. */
 @Composable
 internal fun AccountPreviewCard(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        color = colors.primary,
-        contentColor = colors.onPrimary,
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                PreviewBadge(state)
-                Spacer(Modifier.size(10.dp))
-                Text(
-                    text = state.name.ifBlank { "Account name" },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (state.name.isBlank()) colors.onPrimary.copy(alpha = 0.6f) else colors.onPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                val last4 = state.details.last4
-                if (state.type == AccountType.BankAccount && last4.isNotEmpty()) {
-                    Text(
-                        text = "•••• $last4",
-                        style = MaterialTheme.typography.labelLarge,
-                        letterSpacing = 1.sp,
-                        color = colors.onPrimary.copy(alpha = 0.85f),
-                    )
-                }
-            }
-            Spacer(Modifier.height(18.dp))
-            Text(
-                "Starting balance",
-                style = MaterialTheme.typography.labelMedium,
-                color = colors.onPrimary.copy(alpha = 0.8f),
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AmountInput(state, onIntent, Modifier.weight(1f))
-                CurrencyPill(state, onIntent)
-            }
+    AccountCard(
+        type = state.type,
+        bank = state.details.bank,
+        name = state.name,
+        last4 = state.details.last4,
+        amountLabel = "Starting balance",
+        footer = {
             if (FormField.Amount in state.visibleErrors) {
-                FieldError(FormField.Amount.errorText(), color = colors.errorContainer)
+                FieldError(FormField.Amount.errorText(), color = MaterialTheme.colorScheme.errorContainer)
             } else {
-                Text(
-                    text = accountSummary(state.type, state.details).orEmpty(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.onPrimary.copy(alpha = 0.75f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp).height(18.dp),
-                )
+                AccountCardSummary(accountSummary(state.type, state.details).orEmpty())
             }
-        }
-    }
-}
-
-@Composable
-private fun PreviewBadge(state: AddAccountState) {
-    val bank = state.details.bank
-    if (state.type == AccountType.BankAccount && bank != null) {
-        BankIcon(bank, size = 32.dp)
-    } else {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(32.dp)
-                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f), CircleShape),
-        ) {
-            Icon(state.type.icon, contentDescription = null, modifier = Modifier.size(18.dp))
-        }
+        },
+    ) {
+        AmountInput(state, onIntent, Modifier.weight(1f))
+        CurrencyPill(state, onIntent)
     }
 }
 

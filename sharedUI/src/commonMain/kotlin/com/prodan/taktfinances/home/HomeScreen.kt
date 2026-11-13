@@ -41,15 +41,21 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.prodan.taktfinances.CollectEffects
+import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.home.domain.HomeDestination
 
 @Composable
 fun HomeScreen(
+    accounts: AccountRepository,
     onNavigateToAddAccount: () -> Unit,
-    viewModel: HomeViewModel = viewModel { HomeViewModel() },
+    viewModel: HomeViewModel = viewModel { HomeViewModel(accounts) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Reload on every start, so returning from Add Account shows (and selects) the new account.
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onIntent(HomeIntent.Shown) }
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             HomeEffect.OpenAddAccount -> onNavigateToAddAccount()
@@ -61,6 +67,7 @@ fun HomeScreen(
             viewModel.onIntent(HomeIntent.DestinationSelected(destination))
         },
         onAddAccount = { viewModel.onIntent(HomeIntent.AddAccountTapped) },
+        onIntent = viewModel::onIntent,
     )
 }
 
@@ -70,6 +77,7 @@ internal fun HomeContent(
     state: HomeState,
     onDestinationSelected: (HomeDestination) -> Unit,
     onAddAccount: () -> Unit,
+    onIntent: (HomeIntent) -> Unit = {},
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -85,16 +93,19 @@ internal fun HomeContent(
                 state = state,
                 onDestinationSelected = onDestinationSelected,
                 onAddAccount = onAddAccount,
+                onIntent = onIntent,
             )
             WindowWidthSizeClass.Medium -> MediumHome(
                 state = state,
                 onDestinationSelected = onDestinationSelected,
                 onAddAccount = onAddAccount,
+                onIntent = onIntent,
             )
             else -> ExpandedHome(
                 state = state,
                 onDestinationSelected = onDestinationSelected,
                 onAddAccount = onAddAccount,
+                onIntent = onIntent,
             )
         }
     }
@@ -105,11 +116,13 @@ private fun CompactHome(
     state: HomeState,
     onDestinationSelected: (HomeDestination) -> Unit,
     onAddAccount: () -> Unit,
+    onIntent: (HomeIntent) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         DestinationBody(
             state = state,
             onAddAccount = onAddAccount,
+            onIntent = onIntent,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
@@ -132,6 +145,7 @@ private fun MediumHome(
     state: HomeState,
     onDestinationSelected: (HomeDestination) -> Unit,
     onAddAccount: () -> Unit,
+    onIntent: (HomeIntent) -> Unit,
 ) {
     Row(modifier = Modifier.fillMaxSize()) {
         NavigationRail {
@@ -147,6 +161,7 @@ private fun MediumHome(
         DestinationBody(
             state = state,
             onAddAccount = onAddAccount,
+            onIntent = onIntent,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
@@ -159,6 +174,7 @@ private fun ExpandedHome(
     state: HomeState,
     onDestinationSelected: (HomeDestination) -> Unit,
     onAddAccount: () -> Unit,
+    onIntent: (HomeIntent) -> Unit,
 ) {
     PermanentNavigationDrawer(
         drawerContent = {
@@ -180,6 +196,7 @@ private fun ExpandedHome(
         DestinationBody(
             state = state,
             onAddAccount = onAddAccount,
+            onIntent = onIntent,
             modifier = Modifier.fillMaxSize(),
         )
     }
@@ -190,6 +207,7 @@ private fun ExpandedHome(
 private fun DestinationBody(
     state: HomeState,
     onAddAccount: () -> Unit,
+    onIntent: (HomeIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -203,12 +221,22 @@ private fun DestinationBody(
                 },
             )
         }
-        DestinationMock(
-            title = state.selected.title,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-        )
+        if (state.selected == HomeDestination.MyFinances) {
+            MyFinancesBody(
+                content = state.finances,
+                onIntent = onIntent,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            )
+        } else {
+            DestinationMock(
+                title = state.selected.title,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            )
+        }
     }
 }
 

@@ -1,12 +1,17 @@
 package com.prodan.taktfinances.accounts.domain
 
+import com.prodan.taktfinances.core.Outcome
+import com.prodan.taktfinances.core.Reason
+
 sealed interface AddAccountResult {
-    data class Created(val account: FinanceAccount) : AddAccountResult
+    data class Created(val account: SavedAccount) : AddAccountResult
     data class Invalid(val invalid: Set<FormField>) : AddAccountResult
+    /** The form was valid but the account could not be stored; nothing was created. */
+    data class Failed(val reason: Reason) : AddAccountResult
 }
 
 class AddAccount(private val repository: AccountRepository) {
-    operator fun invoke(
+    suspend operator fun invoke(
         type: AccountType,
         name: String,
         currency: Currency,
@@ -21,8 +26,10 @@ class AddAccount(private val repository: AccountRepository) {
             amountMinor = parseAmountMinor(amount)!!,
             details = buildDetails(type, details),
         )
-        repository.add(account)
-        return AddAccountResult.Created(account)
+        return when (val outcome = repository.add(account)) {
+            is Outcome.Ok -> AddAccountResult.Created(outcome.value)
+            is Outcome.Failed -> AddAccountResult.Failed(outcome.reason)
+        }
     }
 }
 

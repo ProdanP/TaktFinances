@@ -1,6 +1,7 @@
 package com.prodan.taktfinances.accounts
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.prodan.taktfinances.accounts.domain.AccountDetailsDraft
 import com.prodan.taktfinances.accounts.domain.AddAccount
 import com.prodan.taktfinances.accounts.domain.AddAccountResult
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class AddAccountViewModel(
     private val addAccount: AddAccount,
@@ -24,6 +26,9 @@ class AddAccountViewModel(
     val effects: Flow<AddAccountEffect> = _effects.receiveAsFlow()
 
     fun onIntent(intent: AddAccountIntent) {
+        if (intent !is AddAccountIntent.SaveTapped && intent !is AddAccountIntent.FieldFocusChanged) {
+            _state.update { if (it.saveFailed) it.copy(saveFailed = false) else it }
+        }
         when (intent) {
             is AddAccountIntent.TypeSelected -> _state.update {
                 it.copy(
@@ -90,9 +95,17 @@ class AddAccountViewModel(
     private fun save() {
         val current = _state.value
         if (!current.canSave) return
-        when (val result = addAccount(current.type, current.name, current.currency, current.amount, current.details)) {
-            is AddAccountResult.Created -> _effects.trySend(AddAccountEffect.Saved)
-            is AddAccountResult.Invalid -> _state.update { it.copy(left = it.left + result.invalid) }
+        _state.update { it.copy(saving = true, saveFailed = false) }
+        viewModelScope.launch {
+            val result = addAccount(current.type, current.name, current.currency, current.amount, current.details)
+            when (result) {
+                is AddAccountResult.Created -> {
+                    _state.update { it.copy(saving = false) }
+                    _effects.send(AddAccountEffect.Saved)
+                }
+                is AddAccountResult.Invalid -> _state.update { it.copy(saving = false, left = it.left + result.invalid) }
+                is AddAccountResult.Failed -> _state.update { it.copy(saving = false, saveFailed = true) }
+            }
         }
     }
 

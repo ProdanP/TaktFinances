@@ -7,7 +7,12 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var model: HomeModel = HomeModel()
+    @State private var model: HomeModel
+
+    init(repository: AccountRepository, onAddAccount: @escaping () -> Void = {}) {
+        self.onAddAccount = onAddAccount
+        _model = State(initialValue: HomeModel(repository: repository))
+    }
 
     var body: some View {
         let palette = FinancesPalette.scheme(
@@ -32,7 +37,7 @@ struct HomeView: View {
     private func compactTabs(palette: FinancesColorScheme) -> some View {
         TabView(selection: tabSelection) {
             ForEach(model.state.destinations, id: \.name) { destination in
-                destinationMock(title: destination.title, palette: palette)
+                destinationBody(destination, palette: palette)
                     .tabItem {
                         Label(destination.title, systemImage: destination.systemImage)
                     }
@@ -52,7 +57,7 @@ struct HomeView: View {
             }
             .navigationTitle("Home")
         } detail: {
-            destinationMock(title: model.state.selected.title, palette: palette)
+            destinationBody(model.state.selected, palette: palette)
         }
     }
 
@@ -86,6 +91,20 @@ struct HomeView: View {
         )
     }
 
+    @ViewBuilder
+    private func destinationBody(_ destination: HomeDestination, palette: FinancesColorScheme) -> some View {
+        if destination == .myfinances {
+            MyFinancesView(
+                content: model.state.finances,
+                palette: palette,
+                send: model.send,
+                onAddFirstAccount: onAddAccount
+            )
+        } else {
+            destinationMock(title: destination.title, palette: palette)
+        }
+    }
+
     private func destinationMock(title: String, palette: FinancesColorScheme) -> some View {
         Text(title)
             .font(.title)
@@ -112,6 +131,6 @@ private extension HomeDestination {
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeView()
+        HomeView(repository: PreviewAccountRepository())
     }
 }

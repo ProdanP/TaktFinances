@@ -12,13 +12,13 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 - Material 3 window size class (`org.jetbrains.compose.material3:material3-window-size-class`) for `WindowWidthSizeClass` on Android and desktop.
 - SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework.
 - AndroidX Activity Compose for the Android entry. AndroidX Lifecycle ViewModel and Runtime Compose for Compose state holders.
-- kotlinx.coroutines, including the Swing dispatcher on desktop.
+- kotlinx.coroutines, including the Swing dispatcher on desktop. `kotlinx-coroutines-core` is a `data` dependency of a feature that moves blocking work off the caller's thread.
 - kotlinx-coroutines-test for coroutine and Flow tests in `commonTest`.
 - kotlin-test, JUnit, and AndroidX test (Espresso) for tests.
 
 ## Persistence — SQLDelight
 
-`app.cash.sqldelight`. One SQLite database for the app. Each feature owns the `.sq` files for its tables.
+`app.cash.sqldelight` (Gradle plugin, `runtime`, and the `android-driver`, `native-driver` and `sqlite-driver` JDBC drivers). One SQLite database for the app. Each feature owns the `.sq` files for its tables.
 
 Drivers are platform ports, created in the shells and passed into `:sharedLogic`: the Android driver, the native driver on iOS, and the JDBC driver on desktop. A repository maps generated query types to domain models. Query types stay in `data`. The boundary is [data-access.md](data-access.md).
 
@@ -32,7 +32,7 @@ Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response 
 
 ## Dependency injection — Koin
 
-`io.insert-koin:koin-core`, and only in `:sharedLogic`, where the graph is built.
+`io.insert-koin:koin-core`, and only in `:sharedLogic`, where the graph is built. `io.insert-koin:koin-test` checks the module graph in `:sharedLogic` tests.
 
 Screens, use cases, repositories, and SwiftUI take constructor arguments. Do not call `get`, `inject`, or `koinInject` from a feature, a composable, or a Swift view.
 

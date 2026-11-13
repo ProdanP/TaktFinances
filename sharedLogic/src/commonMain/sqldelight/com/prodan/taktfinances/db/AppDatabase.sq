@@ -1,0 +1,3 @@
+-- The app database has no tables of its own. Feature modules add theirs through
+-- dependency(...) in sharedLogic/build.gradle.kts; SQLDelight needs this source folder
+-- to generate AppDatabase.

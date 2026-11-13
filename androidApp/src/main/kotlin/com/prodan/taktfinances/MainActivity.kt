@@ -16,7 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import com.prodan.taktfinances.di.AppDependencies
 import com.prodan.taktfinances.theme.ThemeContrast
 
 private const val CONTRAST_LEVEL = "contrast_level"
@@ -26,9 +26,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        val dependencies = AppDependencies()
         setContent {
             val contrast = rememberThemeContrast()
-            App(contrast = contrast)
+            App(dependencies = dependencies, contrast = contrast)
         }
     }
 }
@@ -57,10 +58,4 @@ private fun rememberThemeContrast(): ThemeContrast {
         }
     }
     return contrast
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

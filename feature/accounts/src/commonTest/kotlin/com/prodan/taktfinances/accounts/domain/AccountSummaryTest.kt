@@ -25,4 +25,11 @@ class AccountSummaryTest {
         assertNull(accountSummary(AccountType.BankAccount, AccountDetailsDraft()))
         assertNull(accountSummary(AccountType.Loan, AccountDetailsDraft(bank = Bank.Maib, platform = "X")))
     }
+
+    @Test
+    fun savedDetailsReadLikeThePreview() {
+        assertEquals("Savings · MAIB", accountSummary(AccountDetails.BankDetails(Bank.Maib, BankAccountKind.Savings, "0421")))
+        assertEquals("Stocks/ETF · XTB", accountSummary(AccountDetails.InvestmentDetails(InvestmentKind.StocksEtf, "XTB")))
+        assertEquals("Borrowed · Ion", accountSummary(AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion")))
+    }
 }

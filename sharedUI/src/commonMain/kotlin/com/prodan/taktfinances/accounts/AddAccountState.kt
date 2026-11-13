@@ -37,10 +37,14 @@ data class AddAccountState(
     val edited: Set<FormField> = emptySet(),
     /** Fields the user edited and then left; only these may show an error. */
     val left: Set<FormField> = emptySet(),
+    /** A save is in progress; a second one must not start. */
+    val saving: Boolean = false,
+    /** The last save could not store the account; cleared by the next edit or save. */
+    val saveFailed: Boolean = false,
 ) {
     val check: FormCheck get() = checkAccountForm(type, name, amount, details)
     val visibleErrors: Set<FormField> get() = check.invalid intersect left
-    val canSave: Boolean get() = check.canSave
+    val canSave: Boolean get() = check.canSave && !saving
     val hint: String? get() = check.hint
 
     /** Raw input while the amount is edited, formatted ("2,500.00") otherwise; empty when blank. */

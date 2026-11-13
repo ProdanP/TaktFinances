@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonGroupDefaults
@@ -54,6 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodan.taktfinances.CollectEffects
+import com.prodan.taktfinances.widthClass
+import com.prodan.taktfinances.WidthClass
+import com.prodan.taktfinances.AdaptiveLayout
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.prodan.taktfinances.accounts.domain.AccountDetailsDraft
 import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.accounts.domain.AccountType
@@ -92,56 +100,98 @@ internal fun AddAccountContent(
     onIntent: (AddAccountIntent) -> Unit,
     onBack: () -> Unit,
 ) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text("New account") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-            )
-        },
-        bottomBar = { SaveBar(state, onIntent) },
-    ) { padding ->
-        Box(
-            contentAlignment = Alignment.TopCenter,
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 480.dp)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                AccountPreviewCard(state, onIntent)
-                Spacer(Modifier.height(16.dp))
-                TypeToggle(state, onIntent)
-                SectionLabel("Name", isError = FormField.Name in state.visibleErrors)
-                FormTextField(
-                    field = FormField.Name,
-                    value = state.name,
-                    onValueChange = { onIntent(AddAccountIntent.NameChanged(it)) },
-                    placeholder = "Salary, Savings, …",
-                    leadingIcon = Icons.AutoMirrored.Outlined.Label,
-                    state = state,
-                    onIntent = onIntent,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Next,
-                    ),
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Preview beside the form only when there is room for both and enough height to keep
+        // the preview pinned; otherwise one scrolling column (phones, phone landscape).
+        val twoColumns = widthClass(maxWidth) == WidthClass.Wide && maxHeight >= AdaptiveLayout.ShortHeight
+        val columnWidth = if (widthClass(maxWidth) == WidthClass.Compact) AdaptiveLayout.PhoneColumnWidth else AdaptiveLayout.FormColumnWidth
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {
+                TopAppBar(
+                    title = { Text("New account") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Filled.Close, contentDescription = "Close")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 )
-                AddAccountDetails(state = state, onIntent = onIntent)
-                Spacer(Modifier.height(24.dp))
+            },
+            bottomBar = { if (!twoColumns) SaveBar(state, onIntent, columnWidth) },
+        ) { padding ->
+            if (twoColumns) {
+                TwoColumnForm(state, onIntent, Modifier.fillMaxSize().padding(padding))
+            } else {
+                Box(
+                    contentAlignment = Alignment.TopCenter,
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = columnWidth)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        AccountPreviewCard(state, onIntent)
+                        Spacer(Modifier.height(16.dp))
+                        FormFields(state, onIntent)
+                        Spacer(Modifier.height(24.dp))
+                    }
+                }
             }
         }
     }
 }
+
+/** Wide windows: the preview stays in view on the left while the form scrolls on the right. */
+@Composable
+private fun TwoColumnForm(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit, modifier: Modifier) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+        modifier = modifier.padding(horizontal = 24.dp),
+    ) {
+        Column(Modifier.width(PREVIEW_COLUMN_WIDTH).padding(vertical = 8.dp)) {
+            AccountPreviewCard(state, onIntent)
+        }
+        Column(Modifier.widthIn(max = AdaptiveLayout.FormColumnWidth).weight(1f, fill = false).fillMaxHeight()) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 8.dp),
+            ) {
+                FormFields(state, onIntent)
+                Spacer(Modifier.height(24.dp))
+            }
+            SaveBar(state, onIntent, AdaptiveLayout.FormColumnWidth, horizontalPadding = 0.dp)
+        }
+    }
+}
+
+@Composable
+private fun FormFields(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit) {
+    TypeToggle(state, onIntent)
+    SectionLabel("Name", isError = FormField.Name in state.visibleErrors)
+    FormTextField(
+        field = FormField.Name,
+        value = state.name,
+        onValueChange = { onIntent(AddAccountIntent.NameChanged(it)) },
+        placeholder = "Salary, Savings, …",
+        leadingIcon = Icons.AutoMirrored.Outlined.Label,
+        state = state,
+        onIntent = onIntent,
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            imeAction = ImeAction.Next,
+        ),
+    )
+    AddAccountDetails(state = state, onIntent = onIntent)
+}
+
+private val PREVIEW_COLUMN_WIDTH = 360.dp
 
 /** Connected toggle buttons for the account type, each with an icon. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -176,9 +226,16 @@ private fun TypeToggle(state: AddAccountState, onIntent: (AddAccountIntent) -> U
     }
 }
 
+internal const val SAVE_FAILED_MESSAGE = "Couldn't save the account. Try again."
+
 /** Hint and "Add account" pinned above the navigation bar and the keyboard. */
 @Composable
-private fun SaveBar(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit) {
+private fun SaveBar(
+    state: AddAccountState,
+    onIntent: (AddAccountIntent) -> Unit,
+    maxWidth: Dp,
+    horizontalPadding: Dp = 16.dp,
+) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Box(
             contentAlignment = Alignment.Center,
@@ -189,12 +246,31 @@ private fun SaveBar(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .widthIn(max = 480.dp)
+                    .widthIn(max = maxWidth)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = horizontalPadding, vertical = 8.dp),
             ) {
                 val hint = state.hint
-                if (hint != null) {
+                if (state.saveFailed) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    ) {
+                        Icon(
+                            Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = SAVE_FAILED_MESSAGE,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else if (hint != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),

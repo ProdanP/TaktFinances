@@ -1,0 +1,30 @@
+-- One row per finance account. Detail columns are filled only for the account's type.
+-- Enum columns hold stable codes owned by the data layer, not display titles.
+CREATE TABLE finance_account (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    amount_minor INTEGER NOT NULL,
+    bank TEXT,
+    bank_kind TEXT,
+    last4 TEXT,
+    investment_kind TEXT,
+    platform TEXT,
+    loan_direction TEXT,
+    counterparty TEXT
+);
+
+insert:
+INSERT INTO finance_account (
+    type, name, currency, amount_minor,
+    bank, bank_kind, last4,
+    investment_kind, platform,
+    loan_direction, counterparty
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+selectAll:
+SELECT * FROM finance_account ORDER BY id;
