@@ -17,7 +17,15 @@ sealed interface Reason {
 
 Add a `Reason` variant only when the screen or a use case behaves differently for it. A reason that belongs to one feature is a type in that feature, passed as `reason`. It is not a second type parameter on `Outcome`.
 
-The repository catches Room/SQLite and Ktor failures and returns `Failed(Reason.Unavailable)`. Rethrow `CancellationException` before that mapping. A bug may still throw.
+The repository catches Room/SQLite and Ktor failures and returns `Failed(Reason.Unavailable)`. Rethrow `CancellationException` before that mapping. Wrap each store or network call in `outcomeOf { ... }` from `:core`, which does both, instead of writing the `try`/`catch` again:
+
+```kotlin
+override suspend fun all(): Outcome<List<SavedAccount>> = outcomeOf {
+    dao.selectAll().map { it.toDomain() }
+}
+```
+
+A repository that needs a different `Reason` for some failure writes its own `try`/`catch` for that call. A bug may still throw.
 
 Android and desktop fold the value into screen state. Swift receives `Ok.value` as `Any` and casts it to the domain type. A function whose success value Swift must use without a cast returns a concrete sealed type for that one call.
 
