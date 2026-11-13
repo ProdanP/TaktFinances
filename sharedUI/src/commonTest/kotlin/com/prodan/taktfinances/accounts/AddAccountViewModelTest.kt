@@ -1,15 +1,21 @@
 package com.prodan.taktfinances.accounts
 
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.AddAccount
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.BankAccountKind
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FormField
-import com.prodan.taktfinances.accounts.domain.InvestmentKind
-import com.prodan.taktfinances.accounts.domain.LoanDirection
 import com.prodan.taktfinances.FakeAccountRepository
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,12 +24,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddAccountViewModelTest {

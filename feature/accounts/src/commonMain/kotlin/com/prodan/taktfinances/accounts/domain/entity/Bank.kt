@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 /**
  * [colorArgb] and [initials] let each UI draw a monogram badge; real logos can replace it later.

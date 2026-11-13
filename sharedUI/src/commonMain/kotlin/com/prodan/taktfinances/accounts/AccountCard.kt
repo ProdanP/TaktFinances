@@ -23,12 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.accountSummary
-import com.prodan.taktfinances.accounts.domain.formatAmount
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.accountSummary
+import com.prodan.taktfinances.accounts.domain.entity.formatAmount
 
 /**
  * The account card layout shared by the Add Account preview and the My Finances swiper:

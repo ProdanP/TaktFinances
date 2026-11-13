@@ -1,8 +1,8 @@
 package com.prodan.taktfinances
 
 import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.core.Reason
 import kotlinx.coroutines.CompletableDeferred

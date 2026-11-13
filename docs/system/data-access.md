@@ -9,19 +9,28 @@ The repository is the boundary. Its public methods return domain types. A call t
 ```
 <name>/data/
   AccountRepositoryImpl.kt   # repository implementation, internal
-  AccountRows.kt             # entity ↔ domain mapping, internal
   local/
     AccountEntity.kt         # @Entity
     AccountDao.kt            # @Dao
+  mapper/
+    AccountMapper.kt         # entity ↔ domain, internal
 ```
 
 - `data.local` contains only Room `@Entity` and `@Dao` types (and Room row projections a `@Query` returns). No repository, no mapping to domain, no `Outcome`.
-- `data` contains the repository implementation and the mapping between entities and domain types. It is the only package that imports `data.local`.
+- `data.mapper` contains the mappers between storage types and domain types, and nothing else.
+- `data` contains the repository implementation. Only `data` and `data.mapper` import `data.local`.
 - The factory takes the DAOs from `data.local` and passes them to the repository implementation.
 
 ## Mapping
 
 A new column or JSON field changes `data` only. It changes `domain` when the business rule changed.
+
+Mappers are `internal` extension functions in `data.mapper`, one file per entity (`<Entity>Mapper.kt`, for example `FinanceAccountMapper.kt`). They have two names:
+
+- `toDbo()` maps a domain type to the database object (the `@Entity`): `fun FinanceAccount.toDbo(): FinanceAccountEntity`.
+- `toDomain()` maps a database object to a domain type: `fun FinanceAccountEntity.toDomain(): SavedAccount`.
+
+The repository calls only these two functions. It does not build an entity or a domain type field by field. A stored row that can't be mapped back, such as an unknown code or a missing detail, throws inside `toDomain()`, and the repository turns that into `Outcome.Failed`.
 
 Money is a `Long` of minor units in domain, in SQL (`INTEGER`), and in JSON (a number). Do not use `REAL`, `Double`, or a decimal string.
 
@@ -38,8 +47,8 @@ internal class AccountRepositoryImpl(
         } catch (_: Exception) {
             return Outcome.Failed(Reason.Unavailable)
         }
-        val minorUnits = row?.minorUnits ?: return Outcome.Failed(Reason.Unavailable)
-        return Outcome.Ok(Money(minorUnits = minorUnits))
+        row ?: return Outcome.Failed(Reason.Unavailable)
+        return Outcome.Ok(row.toDomain()) // data.mapper: fun AccountBalanceRow.toDomain(): Money
     }
 }
 ```

@@ -1,6 +1,6 @@
 package com.prodan.taktfinances.home
 
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.home.domain.HomeDestination
 
 data class HomeState(

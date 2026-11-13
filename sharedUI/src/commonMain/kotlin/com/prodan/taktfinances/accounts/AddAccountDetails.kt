@@ -32,9 +32,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.FormField
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.FormField
 
 @Composable
 internal fun AddAccountDetails(

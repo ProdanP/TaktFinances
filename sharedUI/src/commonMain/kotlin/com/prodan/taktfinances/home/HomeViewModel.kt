@@ -3,7 +3,7 @@ package com.prodan.taktfinances.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.home.domain.HomeDestination
 import com.prodan.taktfinances.home.domain.homeDestinations

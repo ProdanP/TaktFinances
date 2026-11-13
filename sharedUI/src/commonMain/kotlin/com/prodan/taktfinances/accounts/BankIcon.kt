@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.prodan.taktfinances.accounts.domain.Bank
+import com.prodan.taktfinances.accounts.domain.entity.Bank
 
 /** Monogram badge; replace the body with a logo image when real assets are added. */
 @Composable

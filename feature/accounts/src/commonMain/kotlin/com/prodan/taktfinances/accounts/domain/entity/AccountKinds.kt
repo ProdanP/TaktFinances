@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 enum class BankAccountKind(val title: String) {
     Current("Current"),

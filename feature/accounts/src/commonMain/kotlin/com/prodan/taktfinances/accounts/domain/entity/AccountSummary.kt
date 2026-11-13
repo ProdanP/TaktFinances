@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 /**
  * One-line summary of the chosen details for the account preview, e.g. "Savings · Victoriabank"

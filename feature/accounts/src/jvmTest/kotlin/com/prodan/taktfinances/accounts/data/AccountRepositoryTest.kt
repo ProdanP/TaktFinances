@@ -3,21 +3,21 @@ package com.prodan.taktfinances.accounts.data
 import androidx.room3.executeSQL
 import androidx.room3.useWriterConnection
 import com.prodan.taktfinances.accounts.createAccountRepository
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.BankAccountKind
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.InvestmentKind
-import com.prodan.taktfinances.accounts.domain.LoanDirection
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.core.Reason
-import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.test.runTest
 
 private val salary = FinanceAccount("Salary", Currency.MDL, 250000, AccountDetails.BankDetails(Bank.Maib, BankAccountKind.Savings, "0421"))
 private val brokerage = FinanceAccount("Brokerage", Currency.EUR, 150050, AccountDetails.InvestmentDetails(InvestmentKind.StocksEtf, "XTB"))

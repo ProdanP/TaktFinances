@@ -1,11 +1,25 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.usecase
 
+import com.prodan.taktfinances.accounts.domain.AccountRepository
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetailsDraft
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.currencies
+import com.prodan.taktfinances.accounts.domain.entity.defaultCurrency
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.core.Reason
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 private class FakeRepository : AccountRepository {
     val added = mutableListOf<FinanceAccount>()

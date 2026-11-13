@@ -1,15 +1,15 @@
-package com.prodan.taktfinances.accounts.data
+package com.prodan.taktfinances.accounts.data.mapper
 
 import com.prodan.taktfinances.accounts.data.local.FinanceAccountEntity
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.BankAccountKind
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.InvestmentKind
-import com.prodan.taktfinances.accounts.domain.LoanDirection
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 
 // Stored codes. They are part of the schema: renaming an enum entry or its title must not change them.
 private val TYPE_CODES = mapOf(AccountType.BankAccount to "BANK", AccountType.Investment to "INVESTMENT", AccountType.Loan to "LOAN")
@@ -41,7 +41,7 @@ private val LOAN_DIRECTION_CODES = mapOf(LoanDirection.Borrowed to "BORROWED", L
 /** A row that does not map back to the domain (unknown code, missing detail) is a read failure. */
 internal class UnreadableRowException(message: String) : Exception(message)
 
-internal fun FinanceAccount.toRow(): FinanceAccountEntity {
+internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
     val bank = details as? AccountDetails.BankDetails
     val investment = details as? AccountDetails.InvestmentDetails
     val loan = details as? AccountDetails.LoanDetails
@@ -61,7 +61,7 @@ internal fun FinanceAccount.toRow(): FinanceAccountEntity {
     )
 }
 
-internal fun FinanceAccountEntity.toSavedAccount(): SavedAccount {
+internal fun FinanceAccountEntity.toDomain(): SavedAccount {
     val details = when (TYPE_CODES.decode(type, "type")) {
         AccountType.BankAccount -> AccountDetails.BankDetails(
             bank = BANK_CODES.decode(bank, "bank"),

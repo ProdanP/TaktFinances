@@ -1,21 +1,15 @@
 package com.prodan.taktfinances.di
 
 import androidx.room3.Room
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.database.AppDatabase
 import com.prodan.taktfinances.database.DATABASE_NAME
 import com.prodan.taktfinances.database.LEGACY_DATABASE_NAME
 import com.prodan.taktfinances.database.buildApp
-import kotlinx.coroutines.test.runTest
-import org.koin.core.annotation.KoinExperimentalAPI
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
-import org.koin.mp.KoinPlatform
-import org.koin.test.verify.verify
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.AfterTest
@@ -24,6 +18,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.koin.core.annotation.KoinExperimentalAPI
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
+import org.koin.test.verify.verify
 
 private val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
 

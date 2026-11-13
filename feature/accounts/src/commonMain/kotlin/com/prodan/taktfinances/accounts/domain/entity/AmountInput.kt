@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 /**
  * Reduces typed or pasted text to what the amount input accepts: digits and one decimal

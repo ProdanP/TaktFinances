@@ -1,9 +1,11 @@
 package com.prodan.taktfinances.accounts.data
 
 import com.prodan.taktfinances.accounts.data.local.FinanceAccountDao
+import com.prodan.taktfinances.accounts.data.mapper.toDbo
+import com.prodan.taktfinances.accounts.data.mapper.toDomain
 import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.accounts.domain.FinanceAccount
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.core.Reason
 import kotlinx.coroutines.CancellationException
@@ -14,11 +16,11 @@ internal class AccountRepositoryImpl(
 ) : AccountRepository {
 
     override suspend fun add(account: FinanceAccount): Outcome<SavedAccount> = storeCall {
-        SavedAccount(dao.insert(account.toRow()), account)
+        SavedAccount(dao.insert(account.toDbo()), account)
     }
 
     override suspend fun all(): Outcome<List<SavedAccount>> = storeCall {
-        dao.selectAll().map { it.toSavedAccount() }
+        dao.selectAll().map { it.toDomain() }
     }
 
     /** Any store or mapping failure is [Reason.Unavailable]. */

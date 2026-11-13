@@ -27,9 +27,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
@@ -66,7 +66,7 @@ import androidx.compose.ui.unit.dp
 import com.prodan.taktfinances.AdaptiveLayout
 import com.prodan.taktfinances.WidthClass
 import com.prodan.taktfinances.accounts.SavedAccountCard
-import com.prodan.taktfinances.accounts.domain.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.widthClass
 import kotlinx.coroutines.flow.distinctUntilChanged
 

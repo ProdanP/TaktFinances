@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

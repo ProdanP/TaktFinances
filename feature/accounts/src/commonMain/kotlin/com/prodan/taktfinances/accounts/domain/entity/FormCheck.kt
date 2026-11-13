@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts.domain
+package com.prodan.taktfinances.accounts.domain.entity
 
 /** Fields of the Add Account form, in the order the form presents them. */
 enum class FormField(internal val verb: HintVerb, internal val noun: String, internal val article: String) {

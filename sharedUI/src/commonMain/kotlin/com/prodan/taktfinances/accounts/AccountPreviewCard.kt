@@ -43,9 +43,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.FormField
-import com.prodan.taktfinances.accounts.domain.accountSummary
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.accountSummary
 
 internal val AccountType.icon: ImageVector
     get() = when (this) {

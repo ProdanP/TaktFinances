@@ -1,5 +1,7 @@
 package com.prodan.taktfinances.accounts.domain
 
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 
 interface AccountRepository {

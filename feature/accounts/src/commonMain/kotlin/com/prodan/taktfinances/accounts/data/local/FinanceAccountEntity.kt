@@ -8,7 +8,7 @@ import kotlin.native.HiddenFromObjC
 
 /**
  * One row per finance account. Detail columns are filled only for the account's type. Enum
- * columns hold stable codes owned by the data layer (see AccountRows.kt), not display titles.
+ * columns hold stable codes owned by the data layer (see mapper/FinanceAccountMapper.kt), not display titles.
  *
  * Public only because the app database in :sharedLogic lists it; it never leaves `data`.
  */

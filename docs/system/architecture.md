@@ -22,18 +22,21 @@ A feature module compiles for the same targets as `:sharedLogic`: Android, `iosA
 ```
 feature/<name>/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
   domain/
-    model/
+    entity/                   # business models, value types, enums
+    error/                    # this feature's failure reasons
+    usecase/
+      LoadBalance.kt          # use case, public
     AccountRepository.kt      # interface, public
-    LoadBalance.kt            # use case, public
   data/
     AccountRepositoryImpl.kt  # internal
-    AccountRows.kt            # internal mapping between entities and domain
     local/
       AccountEntity.kt        # Room @Entity
       AccountDao.kt           # Room @Dao
+    mapper/
+      AccountMapper.kt        # internal toDbo() / toDomain()
 ```
 
-`data` holds the repository implementation and its mapping. `data.local` holds the Room `@Entity` and `@Dao` types and nothing else. Only the repository implementation uses `data.local`.
+The domain packages are in [domain.md](domain.md). `data` holds the repository implementation. `data.local` holds the Room `@Entity` and `@Dao` types and nothing else. `data.mapper` holds the `toDbo()` and `toDomain()` mappers between entities and domain types. See [data-access.md](data-access.md).
 
 `data` is `internal`. The module exposes one public factory the composition root calls:
 
@@ -52,7 +55,7 @@ Dependencies point inward.
 Compose / SwiftUI  →  domain  ←  data
 ```
 
-- `domain` depends on the Kotlin standard library.
+- `domain` depends on the Kotlin standard library and `:core`. It never imports `data`, `data.local`, or `data.mapper`.
 - `data` implements domain interfaces.
 - A screen or state holder does not import `data`.
 - `data` does not import Compose, Android UI, or Swift.

@@ -2,11 +2,11 @@ package com.prodan.taktfinances.accounts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prodan.taktfinances.accounts.domain.AccountDetailsDraft
-import com.prodan.taktfinances.accounts.domain.AddAccount
-import com.prodan.taktfinances.accounts.domain.AddAccountResult
-import com.prodan.taktfinances.accounts.domain.FormField
-import com.prodan.taktfinances.accounts.domain.filterAmountInput
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetailsDraft
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.filterAmountInput
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccountResult
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
