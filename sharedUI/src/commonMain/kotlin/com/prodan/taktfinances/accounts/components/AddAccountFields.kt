@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts
+package com.prodan.taktfinances.accounts.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +27,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.prodan.taktfinances.accounts.AddAccountIntent
+import com.prodan.taktfinances.accounts.AddAccountState
 import com.prodan.taktfinances.accounts.domain.entity.FormField
 
 private val FieldShape = RoundedCornerShape(16.dp)

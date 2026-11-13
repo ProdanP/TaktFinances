@@ -4,11 +4,47 @@ Screen state is unidirectional. The screen sends an intent. The state holder cal
 
 Android and desktop share `:sharedUI`, so they share one state holder. iOS is SwiftUI and has its own.
 
+## Dependencies
+
+Presentation depends on `domain` only.
+
+- A screen, ViewModel, component, UI model, or navigation entry imports `<name>.domain`, `<name>.domain.entity`, `<name>.domain.usecase`, `<name>.domain.error`, and `:core` (`Outcome`, `Reason`). It imports no other feature types.
+- It never imports `<name>.data`, `data.local`, or `data.mapper`, and never sees a Room entity, DAO, HTTP body, or repository implementation.
+- It does not call a feature's factory (`createAccountRepository`) and does not build a repository or use case from `data`. It receives the repository interface or use case through its constructor. The ViewModel may create a use case from the repository interface it was given.
+- `App` is the only exception. It takes `AppDependencies` from `:sharedLogic` (the composition root) and passes the domain interfaces inside it to the navigation entries.
+- iOS follows the same rule. Swift screen models use the domain types exported by `SharedLogic` and nothing else.
+
 ## Android and desktop — MVI ViewModel
 
 One `ViewModel` per screen, in `com.prodan.taktfinances.<name>` inside `:sharedUI`. It extends AndroidX Lifecycle `ViewModel` (the Compose Multiplatform artifact already in the stack). Desktop uses that same class. Do not add a desktop-only state holder, and do not add an MVI library.
 
 The ViewModel does not import Compose. The composable does not hold screen state.
+
+### Package layout
+
+Each feature has one package in `:sharedUI`, `com.prodan.taktfinances.<name>`:
+
+```
+sharedUI/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
+  components/
+    AccountCard.kt           # composables used by this feature's screens
+  models/
+    AccountCardModel.kt      # UI models: display-ready values the State holds
+  navigation/
+    AddAccountNavigation.kt  # route and NavGraphBuilder entry for each screen
+  AddAccountScreen.kt        # screen composable, collects state and effects
+  AddAccountState.kt         # data class AddAccountState
+  AddAccountIntent.kt        # sealed interface AddAccountIntent
+  AddAccountViewModel.kt     # class AddAccountViewModel
+  AddAccountEffect.kt        # sealed interface AddAccountEffect
+```
+
+- The five screen files, `<Screen>Screen.kt`, `<Screen>State.kt`, `<Screen>Intent.kt`, `<Screen>ViewModel.kt` and `<Screen>Effect.kt`, sit directly in the feature package. Each file holds one type with the same name. A feature with two screens has two sets of five.
+- `<Screen>Effect.kt` exists even when the screen has one effect. A screen with no one-off events leaves it out, along with the `effects` flow.
+- `components/` holds this feature's composables below screen level: cards, fields, rows, icons, and the stateless `<Screen>Content`. They take values and callbacks and do not take a ViewModel. A composable two features use goes in the root `com.prodan.taktfinances` package or `theme`, not in a feature's `components`.
+- `models/` holds UI models: display-ready types that `State` holds when a domain type doesn't fit the screen as is, such as a formatted amount or a label with its color. Mapping from domain to a UI model is a `toUi()` extension function in `models/`. Domain types can go on `State` directly when they need no change. No Compose types (`Color`, `Painter`) go in a model. Keep a plain value such as an ARGB `Long`, and the composable converts it.
+- `navigation/` holds the feature's routes and one `NavGraphBuilder.<screen>Screen(...)` extension per screen that calls `composable(route) { <Screen>Screen(...) }`. Its parameters are the screen's dependencies and navigation callbacks. The shell (`App`) owns the `NavController`, calls these entries inside `NavHost`, and connects one feature's callback to another feature's route. A feature does not navigate to another feature's route by itself.
+- The ViewModel imports from `models` but not from `components` or `navigation`.
 
 Three types:
 
@@ -49,7 +85,7 @@ The screen collects `state` with `collectAsStateWithLifecycle` and sends intents
 
 ### Collecting effects
 
-The shell owns the routes. `App` passes a navigation callback into the screen, such as `onNavigateToHome`. The screen does not take a `NavController`.
+The shell owns the `NavController` and connects features. Each feature declares its routes and graph entries in its `navigation/` package. `App` calls those entries and passes a navigation callback into each one, such as `onNavigateToHome`. The screen does not take a `NavController`.
 
 The ViewModel sends an effect from `onIntent`. The screen collects `effects` with `CollectEffects` in `com.prodan.taktfinances`. Collection runs while the lifecycle is at least `STARTED` and stops on `ON_STOP`. `Channel.BUFFERED` keeps an effect that is sent while collection is stopped. The next start delivers it. The button sends the intent. The collector calls the navigation callback.
 

@@ -36,7 +36,7 @@ feature/<name>/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
       AccountMapper.kt        # internal toDbo() / toDomain()
 ```
 
-The domain packages are in [domain.md](domain.md). `data` holds the repository implementation. `data.local` holds the Room `@Entity` and `@Dao` types and nothing else. `data.mapper` holds the `toDbo()` and `toDomain()` mappers between entities and domain types. See [data-access.md](data-access.md).
+The domain packages are in [domain.md](domain.md). `data` holds the repository implementation. `data.local` holds the Room `@Entity` and `@Dao` types and the storage enums their columns use, and nothing else. `data.mapper` holds the `toDbo()` and `toDomain()` mappers between entities and domain types. See [data-access.md](data-access.md).
 
 `data` is `internal`. The module exposes one public factory the composition root calls:
 
@@ -45,7 +45,7 @@ fun createAccountRepository(local: AccountStore): AccountRepository =
     AccountRepositoryImpl(local)
 ```
 
-Compose for that feature lives in `sharedUI` at `com.prodan.taktfinances.<name>`. SwiftUI for that feature lives in `iosApp/iosApp/<Name>/`. Both call domain types only.
+Compose for that feature lives in `sharedUI` at `com.prodan.taktfinances.<name>`, split into `components/`, `models/` and `navigation/` and the screen files described in [presentation.md](presentation.md). SwiftUI for that feature lives in `iosApp/iosApp/<Name>/`. Both call domain types only.
 
 ## Dependency rule
 
@@ -57,7 +57,7 @@ Compose / SwiftUI  →  domain  ←  data
 
 - `domain` depends on the Kotlin standard library and `:core`. It never imports `data`, `data.local`, or `data.mapper`.
 - `data` implements domain interfaces.
-- A screen or state holder does not import `data`.
+- Presentation (Compose and SwiftUI) depends on `domain` only. A screen, state holder, component, UI model, or navigation entry never imports `data`, `data.local`, or `data.mapper`. See [presentation.md](presentation.md).
 - `data` does not import Compose, Android UI, or Swift.
 - Platform APIs stay in `androidMain`, `iosMain`, or `jvmMain` and implement an interface declared in `commonMain`.
 

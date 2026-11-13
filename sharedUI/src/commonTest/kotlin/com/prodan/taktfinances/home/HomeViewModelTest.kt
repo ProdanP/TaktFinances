@@ -6,6 +6,7 @@ import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
 import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 import com.prodan.taktfinances.home.domain.HomeDestination
+import com.prodan.taktfinances.home.models.MyFinancesContent
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts
+package com.prodan.taktfinances.accounts.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

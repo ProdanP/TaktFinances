@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.accounts
+package com.prodan.taktfinances.accounts.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.prodan.taktfinances.accounts.AddAccountIntent
+import com.prodan.taktfinances.accounts.AddAccountState
 import com.prodan.taktfinances.accounts.domain.entity.AccountType
 import com.prodan.taktfinances.accounts.domain.entity.Bank
 import com.prodan.taktfinances.accounts.domain.entity.FormField

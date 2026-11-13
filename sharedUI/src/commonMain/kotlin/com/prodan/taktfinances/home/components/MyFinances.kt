@@ -1,4 +1,4 @@
-package com.prodan.taktfinances.home
+package com.prodan.taktfinances.home.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,8 +65,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prodan.taktfinances.AdaptiveLayout
 import com.prodan.taktfinances.WidthClass
-import com.prodan.taktfinances.accounts.SavedAccountCard
+import com.prodan.taktfinances.accounts.components.SavedAccountCard
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.home.HomeIntent
+import com.prodan.taktfinances.home.models.MyFinancesContent
 import com.prodan.taktfinances.widthClass
 import kotlinx.coroutines.flow.distinctUntilChanged
 

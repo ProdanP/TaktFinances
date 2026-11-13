@@ -7,6 +7,7 @@ import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.home.domain.HomeDestination
 import com.prodan.taktfinances.home.domain.homeDestinations
+import com.prodan.taktfinances.home.models.MyFinancesContent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,6 +1,12 @@
 package com.prodan.taktfinances.accounts.data.mapper
 
+import com.prodan.taktfinances.accounts.data.local.AccountTypeDbo
+import com.prodan.taktfinances.accounts.data.local.BankDbo
+import com.prodan.taktfinances.accounts.data.local.BankKindDbo
+import com.prodan.taktfinances.accounts.data.local.CurrencyDbo
 import com.prodan.taktfinances.accounts.data.local.FinanceAccountEntity
+import com.prodan.taktfinances.accounts.data.local.InvestmentKindDbo
+import com.prodan.taktfinances.accounts.data.local.LoanDirectionDbo
 import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
 import com.prodan.taktfinances.accounts.domain.entity.AccountType
 import com.prodan.taktfinances.accounts.domain.entity.Bank
@@ -11,34 +17,7 @@ import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 
-// Stored codes. They are part of the schema: renaming an enum entry or its title must not change them.
-private val TYPE_CODES = mapOf(AccountType.BankAccount to "BANK", AccountType.Investment to "INVESTMENT", AccountType.Loan to "LOAN")
-private val CURRENCY_CODES = Currency.entries.associateWith { it.code }
-private val BANK_CODES = mapOf(
-    Bank.Maib to "MAIB",
-    Bank.Victoriabank to "VICTORIABANK",
-    Bank.Micb to "MICB",
-    Bank.ProCredit to "PROCREDIT",
-    Bank.Mobiasbanca to "MOBIASBANCA",
-    Bank.Other to "OTHER",
-)
-private val BANK_KIND_CODES = mapOf(
-    BankAccountKind.Current to "CURRENT",
-    BankAccountKind.Savings to "SAVINGS",
-    BankAccountKind.Card to "CARD",
-    BankAccountKind.Deposit to "DEPOSIT",
-)
-private val INVESTMENT_KIND_CODES = mapOf(
-    InvestmentKind.StocksEtf to "STOCKS_ETF",
-    InvestmentKind.Crypto to "CRYPTO",
-    InvestmentKind.Bonds to "BONDS",
-    InvestmentKind.Deposit to "DEPOSIT",
-    InvestmentKind.RealEstate to "REAL_ESTATE",
-    InvestmentKind.Other to "OTHER",
-)
-private val LOAN_DIRECTION_CODES = mapOf(LoanDirection.Borrowed to "BORROWED", LoanDirection.Lent to "LENT")
-
-/** A row that does not map back to the domain (unknown code, missing detail) is a read failure. */
+/** A row that does not map back to the domain (missing detail for its type) is a read failure. */
 internal class UnreadableRowException(message: String) : Exception(message)
 
 internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
@@ -47,44 +26,126 @@ internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
     val loan = details as? AccountDetails.LoanDetails
     return FinanceAccountEntity(
         id = 0,
-        type = TYPE_CODES.getValue(type),
+        type = type.toDbo(),
         name = name,
-        currency = CURRENCY_CODES.getValue(currency),
+        currency = currency.toDbo(),
         amountMinor = amountMinor,
-        bank = bank?.let { BANK_CODES.getValue(it.bank) },
-        bankKind = bank?.let { BANK_KIND_CODES.getValue(it.kind) },
+        bank = bank?.bank?.toDbo(),
+        bankKind = bank?.kind?.toDbo(),
         last4 = bank?.last4,
-        investmentKind = investment?.let { INVESTMENT_KIND_CODES.getValue(it.kind) },
+        investmentKind = investment?.kind?.toDbo(),
         platform = investment?.platform,
-        loanDirection = loan?.let { LOAN_DIRECTION_CODES.getValue(it.direction) },
+        loanDirection = loan?.direction?.toDbo(),
         counterparty = loan?.counterparty,
     )
 }
 
 internal fun FinanceAccountEntity.toDomain(): SavedAccount {
-    val details = when (TYPE_CODES.decode(type, "type")) {
-        AccountType.BankAccount -> AccountDetails.BankDetails(
-            bank = BANK_CODES.decode(bank, "bank"),
-            kind = BANK_KIND_CODES.decode(bankKind, "bank_kind"),
+    val details = when (type) {
+        AccountTypeDbo.BANK -> AccountDetails.BankDetails(
+            bank = required(bank, "bank").toDomain(),
+            kind = required(bankKind, "bank_kind").toDomain(),
             last4 = last4,
         )
-        AccountType.Investment -> AccountDetails.InvestmentDetails(
-            kind = INVESTMENT_KIND_CODES.decode(investmentKind, "investment_kind"),
-            platform = platform ?: throw UnreadableRowException("account $id has no platform"),
+        AccountTypeDbo.INVESTMENT -> AccountDetails.InvestmentDetails(
+            kind = required(investmentKind, "investment_kind").toDomain(),
+            platform = required(platform, "platform"),
         )
-        AccountType.Loan -> AccountDetails.LoanDetails(
-            direction = LOAN_DIRECTION_CODES.decode(loanDirection, "loan_direction"),
-            counterparty = counterparty ?: throw UnreadableRowException("account $id has no counterparty"),
+        AccountTypeDbo.LOAN -> AccountDetails.LoanDetails(
+            direction = required(loanDirection, "loan_direction").toDomain(),
+            counterparty = required(counterparty, "counterparty"),
         )
     }
     val account = FinanceAccount(
         name = name,
-        currency = CURRENCY_CODES.decode(currency, "currency"),
+        currency = currency.toDomain(),
         amountMinor = amountMinor,
         details = details,
     )
     return SavedAccount(id, account)
 }
 
-private fun <T> Map<T, String>.decode(code: String?, column: String): T =
-    entries.firstOrNull { it.value == code }?.key ?: throw UnreadableRowException("unknown $column code: $code")
+private fun <T : Any> FinanceAccountEntity.required(value: T?, column: String): T =
+    value ?: throw UnreadableRowException("account $id has no $column")
+
+private fun AccountType.toDbo(): AccountTypeDbo = when (this) {
+    AccountType.BankAccount -> AccountTypeDbo.BANK
+    AccountType.Investment -> AccountTypeDbo.INVESTMENT
+    AccountType.Loan -> AccountTypeDbo.LOAN
+}
+
+private fun Currency.toDbo(): CurrencyDbo = when (this) {
+    Currency.MDL -> CurrencyDbo.MDL
+    Currency.USD -> CurrencyDbo.USD
+    Currency.EUR -> CurrencyDbo.EUR
+    Currency.GBP -> CurrencyDbo.GBP
+    Currency.RON -> CurrencyDbo.RON
+}
+
+private fun CurrencyDbo.toDomain(): Currency = when (this) {
+    CurrencyDbo.MDL -> Currency.MDL
+    CurrencyDbo.USD -> Currency.USD
+    CurrencyDbo.EUR -> Currency.EUR
+    CurrencyDbo.GBP -> Currency.GBP
+    CurrencyDbo.RON -> Currency.RON
+}
+
+private fun Bank.toDbo(): BankDbo = when (this) {
+    Bank.Maib -> BankDbo.MAIB
+    Bank.Victoriabank -> BankDbo.VICTORIABANK
+    Bank.Micb -> BankDbo.MICB
+    Bank.ProCredit -> BankDbo.PROCREDIT
+    Bank.Mobiasbanca -> BankDbo.MOBIASBANCA
+    Bank.Other -> BankDbo.OTHER
+}
+
+private fun BankDbo.toDomain(): Bank = when (this) {
+    BankDbo.MAIB -> Bank.Maib
+    BankDbo.VICTORIABANK -> Bank.Victoriabank
+    BankDbo.MICB -> Bank.Micb
+    BankDbo.PROCREDIT -> Bank.ProCredit
+    BankDbo.MOBIASBANCA -> Bank.Mobiasbanca
+    BankDbo.OTHER -> Bank.Other
+}
+
+private fun BankAccountKind.toDbo(): BankKindDbo = when (this) {
+    BankAccountKind.Current -> BankKindDbo.CURRENT
+    BankAccountKind.Savings -> BankKindDbo.SAVINGS
+    BankAccountKind.Card -> BankKindDbo.CARD
+    BankAccountKind.Deposit -> BankKindDbo.DEPOSIT
+}
+
+private fun BankKindDbo.toDomain(): BankAccountKind = when (this) {
+    BankKindDbo.CURRENT -> BankAccountKind.Current
+    BankKindDbo.SAVINGS -> BankAccountKind.Savings
+    BankKindDbo.CARD -> BankAccountKind.Card
+    BankKindDbo.DEPOSIT -> BankAccountKind.Deposit
+}
+
+private fun InvestmentKind.toDbo(): InvestmentKindDbo = when (this) {
+    InvestmentKind.StocksEtf -> InvestmentKindDbo.STOCKS_ETF
+    InvestmentKind.Crypto -> InvestmentKindDbo.CRYPTO
+    InvestmentKind.Bonds -> InvestmentKindDbo.BONDS
+    InvestmentKind.Deposit -> InvestmentKindDbo.DEPOSIT
+    InvestmentKind.RealEstate -> InvestmentKindDbo.REAL_ESTATE
+    InvestmentKind.Other -> InvestmentKindDbo.OTHER
+}
+
+private fun InvestmentKindDbo.toDomain(): InvestmentKind = when (this) {
+    InvestmentKindDbo.STOCKS_ETF -> InvestmentKind.StocksEtf
+    InvestmentKindDbo.CRYPTO -> InvestmentKind.Crypto
+    InvestmentKindDbo.BONDS -> InvestmentKind.Bonds
+    InvestmentKindDbo.DEPOSIT -> InvestmentKind.Deposit
+    InvestmentKindDbo.REAL_ESTATE -> InvestmentKind.RealEstate
+    InvestmentKindDbo.OTHER -> InvestmentKind.Other
+}
+
+private fun LoanDirection.toDbo(): LoanDirectionDbo = when (this) {
+    LoanDirection.Borrowed -> LoanDirectionDbo.BORROWED
+    LoanDirection.Lent -> LoanDirectionDbo.LENT
+}
+
+private fun LoanDirectionDbo.toDomain(): LoanDirection = when (this) {
+    LoanDirectionDbo.BORROWED -> LoanDirection.Borrowed
+    LoanDirectionDbo.LENT -> LoanDirection.Lent
+}

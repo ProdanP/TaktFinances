@@ -15,7 +15,13 @@ iOS screen → one `@Observable` model in `iosApp/iosApp/<Name>/`. It calls doma
 
 ## Checklist
 
+- [ ] Compose feature package `com.prodan.taktfinances.<name>` has `components/`, `models/` and `navigation/`, plus `<Screen>Screen.kt`, `<Screen>State.kt`, `<Screen>Intent.kt`, `<Screen>ViewModel.kt` and `<Screen>Effect.kt` at its root. Each file holds one type.
+- [ ] Below-screen composables (cards, fields, `<Screen>Content`) are in `components/`. They take values and callbacks, not a ViewModel.
+- [ ] Display-ready UI models are in `models/`, mapped from domain with `toUi()`. They hold no Compose types.
+- [ ] Routes and `NavGraphBuilder.<screen>Screen(...)` entries are in `navigation/`. `App` owns the `NavController` and connects features.
+
 - [ ] One immutable `State`, one `Intent` (or Swift `Intent`) type, one `onIntent` or `send` entry
+- [ ] Presentation depends on `domain` only: no import from the feature's `data`, `data.local` or `data.mapper`, and no call to its factory. Repositories and use cases come in through the constructor. Only `App` touches `AppDependencies`
 - [ ] State holder calls domain types and does not import Compose, SwiftUI, Room, or Ktor
 - [ ] Compose screen has no screen `remember` state; SwiftUI writes state only through `send`
 - [ ] Navigation and other one-off events are not stored as sticky flags on Android and desktop. The Compose screen collects them with `CollectEffects` while the lifecycle is at least `STARTED`. iOS navigation is `NavigationStack` state

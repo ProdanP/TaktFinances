@@ -8,7 +8,7 @@ import kotlin.native.HiddenFromObjC
 
 /**
  * One row per finance account. Detail columns are filled only for the account's type. Enum
- * columns hold stable codes owned by the data layer (see mapper/FinanceAccountMapper.kt), not display titles.
+ * columns use this package's storage enums (`*Dbo`), not the domain enums.
  *
  * Public only because the app database in :sharedLogic lists it; it never leaves `data`.
  */
@@ -17,15 +17,15 @@ import kotlin.native.HiddenFromObjC
 @Entity(tableName = "finance_account")
 class FinanceAccountEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
-    val type: String,
+    val type: AccountTypeDbo,
     val name: String,
-    val currency: String,
+    val currency: CurrencyDbo,
     @ColumnInfo(name = "amount_minor") val amountMinor: Long,
-    val bank: String?,
-    @ColumnInfo(name = "bank_kind") val bankKind: String?,
+    val bank: BankDbo?,
+    @ColumnInfo(name = "bank_kind") val bankKind: BankKindDbo?,
     val last4: String?,
-    @ColumnInfo(name = "investment_kind") val investmentKind: String?,
+    @ColumnInfo(name = "investment_kind") val investmentKind: InvestmentKindDbo?,
     val platform: String?,
-    @ColumnInfo(name = "loan_direction") val loanDirection: String?,
+    @ColumnInfo(name = "loan_direction") val loanDirection: LoanDirectionDbo?,
     val counterparty: String?,
 )
