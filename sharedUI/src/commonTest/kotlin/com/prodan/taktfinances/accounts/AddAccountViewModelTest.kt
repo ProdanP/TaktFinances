@@ -9,7 +9,9 @@ import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FormField
 import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
-import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
+import com.prodan.taktfinances.accounts.domain.entity.StartingPointPayload
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,6 +26,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddAccountViewModelTest {
@@ -35,7 +39,7 @@ class AddAccountViewModelTest {
     fun resetDispatcher() = Dispatchers.resetMain()
 
     private val repository = FakeAccountRepository()
-    private val viewModel = AddAccountViewModel(AddAccount(repository))
+    private val viewModel = AddAccountViewModel(AddAccountUseCase(repository)) { LocalDate(2026, 11, 16) }
     private val state get() = viewModel.state.value
 
     private fun send(vararg intents: AddAccountIntent) = intents.forEach(viewModel::onIntent)
@@ -197,11 +201,29 @@ class AddAccountViewModelTest {
             AddAccountIntent.InvestmentKindSelected(InvestmentKind.Crypto),
             AddAccountIntent.PlatformChanged("Binance"),
             AddAccountIntent.NameChanged("Brokerage"),
-            AddAccountIntent.AmountChanged("1500.50"),
             AddAccountIntent.SaveTapped,
         )
         assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
-        assertEquals(150050, repository.accounts.single().amountMinor)
+        assertEquals(listOf<StartingPointPayload>(StartingPointPayload.Transactions(0)), repository.starts)
+        assertEquals(LocalDate(2026, 11, 16), repository.accounts.single().createdOn)
+    }
+
+    @Test
+    fun investmentHidesTheAmountAndKeepsItForLater() {
+        send(AddAccountIntent.AmountChanged("500"), AddAccountIntent.TypeSelected(AccountType.Investment))
+        assertFalse(state.showsAmount)
+        assertEquals("Enter a name, choose a kind, enter a platform", state.hint)
+        send(AddAccountIntent.TypeSelected(AccountType.BankAccount))
+        assertTrue(state.showsAmount)
+        assertEquals("500", state.amount)
+    }
+
+    @Test
+    fun bankBalanceBecomesTheCurrentMonthEntry() = runTest {
+        fillBank()
+        send(AddAccountIntent.SaveTapped)
+        assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
+        assertEquals(listOf<StartingPointPayload>(StartingPointPayload.Monthly(MonthlyEntry(YearMonth(2026, 11), 250000))), repository.starts)
     }
 
     @Test

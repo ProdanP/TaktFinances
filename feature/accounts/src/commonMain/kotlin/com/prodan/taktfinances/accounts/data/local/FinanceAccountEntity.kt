@@ -8,7 +8,8 @@ import kotlin.native.HiddenFromObjC
 
 /**
  * One row per finance account. Detail columns are filled only for the account's type. Enum
- * columns use this package's storage enums (`*Dbo`), not the domain enums.
+ * columns use this package's storage enums (`*Dbo`), not the domain enums. [createdOn] is ISO text
+ * ("2026-11-16"). The balance is not stored here; it comes from the account's period.
  *
  * Public only because the app database in :sharedLogic lists it; it never leaves `data`.
  */
@@ -20,7 +21,7 @@ class FinanceAccountEntity(
     val type: AccountTypeDbo,
     val name: String,
     val currency: CurrencyDbo,
-    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    @ColumnInfo(name = "created_on") val createdOn: String,
     val bank: BankDbo?,
     @ColumnInfo(name = "bank_kind") val bankKind: BankKindDbo?,
     val last4: String?,

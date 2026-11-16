@@ -40,6 +40,9 @@ struct AddAccountState {
     }
 
     var summary: String? { AccountSummaryKt.accountSummary(type: type, details: details.draft) }
+
+    /// Bank and Loan enter a balance; Investment starts at 0.00 and shows the tracking notice instead.
+    var showsAmount: Bool { type.hasAmount }
 }
 
 struct DetailsInput {
@@ -87,10 +90,10 @@ private let detailFields: Set<FormField> = [
 @Observable
 final class AddAccountModel {
     private(set) var state = AddAccountState()
-    private let addAccount: AddAccount
+    private let addAccount: AddAccountUseCase
 
     init(repository: AccountRepository) {
-        addAccount = AddAccount(repository: repository)
+        addAccount = AddAccountUseCase(repository: repository)
         state.types = AccountTypeKt.accountTypes()
         state.currencies = CurrencyKt.currencies()
         state.banks = BankKt.banks()
@@ -186,7 +189,8 @@ final class AddAccountModel {
                 name: input.name,
                 currency: input.currency,
                 amount: input.amount,
-                details: input.details.draft
+                details: input.details.draft,
+                today: TodayKt.today()
             )
             state.saving = false
             if let invalid = result as? AddAccountResultInvalid {

@@ -26,7 +26,7 @@ data class FormCheck(val invalid: Set<FormField>) {
     val hint: String? get() = missingFieldsHint(missing)
 }
 
-/** Checks the fields that belong to [type]; details of other types are ignored. */
+/** Checks the fields that belong to [type]; details of other types are ignored. Investment has no amount. */
 fun checkAccountForm(
     type: AccountType,
     name: String,
@@ -35,7 +35,7 @@ fun checkAccountForm(
 ): FormCheck {
     val invalid = buildSet {
         if (name.isBlank()) add(FormField.Name)
-        if (parseAmountMinor(amount) == null) add(FormField.Amount)
+        if (type.hasAmount && parseAmountMinor(amount) == null) add(FormField.Amount)
         when (type) {
             AccountType.BankAccount -> {
                 if (details.bank == null) add(FormField.Bank)

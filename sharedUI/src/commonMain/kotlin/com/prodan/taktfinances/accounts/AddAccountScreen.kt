@@ -7,13 +7,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodan.taktfinances.CollectEffects
 import com.prodan.taktfinances.accounts.components.AddAccountContent
 import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
 
 @Composable
 fun AddAccountScreen(
     repository: AccountRepository,
     onClose: () -> Unit,
-    viewModel: AddAccountViewModel = viewModel { AddAccountViewModel(AddAccount(repository)) },
+    viewModel: AddAccountViewModel = viewModel { AddAccountViewModel(AddAccountUseCase(repository)) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     CollectEffects(viewModel.effects) { effect ->

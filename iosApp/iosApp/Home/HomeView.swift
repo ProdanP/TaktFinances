@@ -3,14 +3,20 @@ import SwiftUI
 
 struct HomeView: View {
     var onAddAccount: () -> Void = {}
+    var onOpenAccount: (_ id: Int64, _ checkIn: Bool) -> Void = { _, _ in }
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var model: HomeModel
 
-    init(repository: AccountRepository, onAddAccount: @escaping () -> Void = {}) {
+    init(
+        repository: AccountRepository,
+        onAddAccount: @escaping () -> Void = {},
+        onOpenAccount: @escaping (_ id: Int64, _ checkIn: Bool) -> Void = { _, _ in }
+    ) {
         self.onAddAccount = onAddAccount
+        self.onOpenAccount = onOpenAccount
         _model = State(initialValue: HomeModel(repository: repository))
     }
 
@@ -96,9 +102,11 @@ struct HomeView: View {
         if destination == .myfinances {
             MyFinancesView(
                 content: model.state.finances,
+                balances: model.state.balances,
                 palette: palette,
                 send: model.send,
-                onAddFirstAccount: onAddAccount
+                onAddFirstAccount: onAddAccount,
+                onOpenAccount: onOpenAccount
             )
         } else {
             destinationMock(title: destination.title, palette: palette)

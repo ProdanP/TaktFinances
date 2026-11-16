@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.balanceMinor
+import com.prodan.taktfinances.accounts.domain.entity.today
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.home.domain.HomeDestination
 import com.prodan.taktfinances.home.domain.homeDestinations
@@ -16,9 +18,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
+/** [today] decides each card's current balance; tests pass a fixed date. */
 class HomeViewModel(
     private val accounts: AccountRepository,
+    private val today: () -> LocalDate = ::today,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         HomeState(
@@ -42,6 +47,9 @@ class HomeViewModel(
             is HomeIntent.AccountSelected -> select { accounts -> accounts.firstOrNull { it.id == intent.id } }
             HomeIntent.PreviousTapped -> select { accounts -> accounts.getOrNull(selectedIndex - 1) }
             HomeIntent.NextTapped -> select { accounts -> accounts.getOrNull(selectedIndex + 1) }
+            is HomeIntent.AccountTapped -> _effects.trySend(HomeEffect.OpenAccount(intent.id, checkIn = false))
+            is HomeIntent.SeeAllTapped -> _effects.trySend(HomeEffect.OpenAccount(intent.id, checkIn = false))
+            is HomeIntent.CheckInTapped -> _effects.trySend(HomeEffect.OpenAccount(intent.id, checkIn = true))
         }
     }
 
@@ -70,7 +78,8 @@ class HomeViewModel(
             previousSelection != null && list.any { it.id == previousSelection } -> previousSelection
             else -> list.first().id
         }
-        return MyFinancesContent.Accounts(list, selectedId)
+        val date = today()
+        return MyFinancesContent.Accounts(list, selectedId, list.associate { it.id to it.balanceMinor(date) })
     }
 
     private fun select(pick: MyFinancesContent.Accounts.(List<SavedAccount>) -> SavedAccount?) {

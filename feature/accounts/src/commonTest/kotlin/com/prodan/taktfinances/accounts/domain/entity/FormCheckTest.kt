@@ -19,7 +19,7 @@ class FormCheckTest {
             checkAccountForm(AccountType.BankAccount, "", "", empty).missing,
         )
         assertEquals(
-            listOf(FormField.Name, FormField.Amount, FormField.InvestmentKind, FormField.Platform),
+            listOf(FormField.Name, FormField.InvestmentKind, FormField.Platform),
             checkAccountForm(AccountType.Investment, "", "", empty).missing,
         )
         assertEquals(
@@ -33,6 +33,7 @@ class FormCheckTest {
     fun completeFormCanBeSaved() {
         assertTrue(checkAccountForm(AccountType.BankAccount, "Salary", "2500", bank).canSave)
         assertTrue(checkAccountForm(AccountType.Investment, "Fund", "12.", investment).canSave)
+        assertTrue(checkAccountForm(AccountType.Investment, "Fund", "", investment).canSave)
         assertTrue(checkAccountForm(AccountType.Loan, "Car", "0", loan).canSave)
     }
 

@@ -7,11 +7,16 @@ import com.prodan.taktfinances.accounts.domain.entity.AccountType
 import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
 import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.accounts.domain.entity.StartingPointPayload
 import com.prodan.taktfinances.accounts.domain.entity.checkAccountForm
+import com.prodan.taktfinances.accounts.domain.entity.hasAmount
 import com.prodan.taktfinances.accounts.domain.entity.parseAmountMinor
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.core.Reason
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.yearMonth
 
 sealed interface AddAccountResult {
     data class Created(val account: SavedAccount) : AddAccountResult
@@ -20,23 +25,33 @@ sealed interface AddAccountResult {
     data class Failed(val reason: Reason) : AddAccountResult
 }
 
-class AddAccount(private val repository: AccountRepository) {
+/**
+ * Creates an account dated [today]. Bank and Loan are tracked monthly from the entered [amount] as
+ * the current month's entry; Investment ignores [amount] and starts at 0.00, tracked by trades.
+ */
+class AddAccountUseCase(private val repository: AccountRepository) {
     suspend operator fun invoke(
         type: AccountType,
         name: String,
         currency: Currency,
         amount: String,
         details: AccountDetailsDraft = AccountDetailsDraft(),
+        today: LocalDate,
     ): AddAccountResult {
         val check = checkAccountForm(type, name, amount, details)
         if (!check.canSave) return AddAccountResult.Invalid(check.invalid)
         val account = FinanceAccount(
             name = name.trim(),
             currency = currency,
-            amountMinor = parseAmountMinor(amount)!!,
             details = buildDetails(type, details),
+            createdOn = today,
         )
-        return when (val outcome = repository.add(account)) {
+        val start = if (type.hasAmount) {
+            StartingPointPayload.Monthly(MonthlyEntry(today.yearMonth, parseAmountMinor(amount)!!))
+        } else {
+            StartingPointPayload.Transactions(openingBalanceMinor = 0)
+        }
+        return when (val outcome = repository.add(account, start)) {
             is Outcome.Ok -> AddAccountResult.Created(outcome.value)
             is Outcome.Failed -> AddAccountResult.Failed(outcome.reason)
         }

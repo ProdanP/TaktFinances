@@ -15,4 +15,13 @@ sealed interface HomeIntent {
     data object NextTapped : HomeIntent
     data object RetryTapped : HomeIntent
     data object AddFirstAccountTapped : HomeIntent
+
+    /** The card of the account with [id] was tapped (or Enter on the focused card). */
+    data class AccountTapped(val id: Long) : HomeIntent
+
+    /** "See all" under the selected account's activity. */
+    data class SeeAllTapped(val id: Long) : HomeIntent
+
+    /** "Check in" in the selected account's empty activity. */
+    data class CheckInTapped(val id: Long) : HomeIntent
 }

@@ -14,14 +14,17 @@ import com.prodan.taktfinances.home.components.HomeContent
 fun HomeScreen(
     accounts: AccountRepository,
     onNavigateToAddAccount: () -> Unit,
+    onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
     viewModel: HomeViewModel = viewModel { HomeViewModel(accounts) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    // Reload on every start, so returning from Add Account shows (and selects) the new account.
+    // Reload on every start, so returning from Add Account shows (and selects) the new account,
+    // and returning from Account Detail shows its new balance.
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onIntent(HomeIntent.Shown) }
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             HomeEffect.OpenAddAccount -> onNavigateToAddAccount()
+            is HomeEffect.OpenAccount -> onNavigateToAccount(effect.id, effect.checkIn)
         }
     }
     HomeContent(

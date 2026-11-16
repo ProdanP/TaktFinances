@@ -166,7 +166,30 @@ private fun FormFields(state: AddAccountState, onIntent: (AddAccountIntent) -> U
             imeAction = ImeAction.Next,
         ),
     )
+    if (!state.showsAmount) InvestmentTrackingNotice()
     AddAccountDetails(state = state, onIntent = onIntent)
+}
+
+internal const val INVESTMENT_TRACKING_NOTICE =
+    "Investments are tracked by trades. You'll add your holdings as trades after saving."
+
+/** Shown for Investment in place of an amount. */
+@Composable
+private fun InvestmentTrackingNotice() {
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+            Text(INVESTMENT_TRACKING_NOTICE, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
 }
 
 private val PREVIEW_COLUMN_WIDTH = 360.dp

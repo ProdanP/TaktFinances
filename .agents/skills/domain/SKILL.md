@@ -12,7 +12,9 @@ Read [docs/system/domain.md](../../../docs/system/domain.md) and follow it. Modu
 - [ ] Business models, value types, and enums go in `domain/entity/`. These are not Room `@Entity` types; those go in `data/local/`.
 - [ ] This feature's failure types go in `domain/error/`. Shared `Outcome` and `Reason` stay in `:core`.
 - [ ] Use cases go in `domain/usecase/`. Each is one class with one public method, added only when the action has a rule, a policy, or more than one repository call.
+- [ ] A business model in `domain/entity/` uses the plain domain name (`FinanceAccount`). A model that is input to a repository call ends in `Payload` (`StartingPointPayload`). The file name matches the type.
+- [ ] A use case class and its file end in `UseCase` (`AddAccountUseCase.kt`).
 - [ ] The repository interface is `domain/<Name>Repository.kt`. It takes and returns `domain.entity` types and `Outcome`.
 - [ ] Nothing under `domain/` imports the feature's `data` packages (`data`, `data.local`, `data.mapper`).
-- [ ] `domain` imports only the Kotlin standard library and `:core`. No Room, Ktor, Koin, coroutines, Compose, or platform APIs.
+- [ ] `domain` imports only the Kotlin standard library, `kotlinx-datetime` and `:core`. No Room, Ktor, Koin, coroutines, Compose, or platform APIs. Rules that need today's date take it as a `LocalDate` parameter.
 - [ ] A use case with a rule has a `commonTest`.

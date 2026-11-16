@@ -3,6 +3,8 @@ import SwiftUI
 
 private enum Route: Hashable {
     case addAccount
+    /// Account Detail; `checkIn` opens its check-in sheet for the current month.
+    case account(id: Int64, checkIn: Bool)
 }
 
 struct ContentView: View {
@@ -14,11 +16,17 @@ struct ContentView: View {
     var body: some View {
         if showHome {
             NavigationStack(path: $path) {
-                HomeView(repository: dependencies.accountRepository, onAddAccount: { path.append(.addAccount) })
+                HomeView(
+                    repository: dependencies.accountRepository,
+                    onAddAccount: { path.append(.addAccount) },
+                    onOpenAccount: { id, checkIn in path.append(.account(id: id, checkIn: checkIn)) }
+                )
                     .navigationDestination(for: Route.self) { route in
                         switch route {
                         case .addAccount:
                             AddAccountView(repository: dependencies.accountRepository, onClose: { path.removeAll() })
+                        case let .account(id, checkIn):
+                            AccountDetailView(repository: dependencies.accountRepository, accountId: id, checkInOnOpen: checkIn)
                         }
                     }
             }

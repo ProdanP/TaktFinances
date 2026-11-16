@@ -45,6 +45,10 @@ fun formatAmount(minor: Long): String {
     return "$grouped.$cents"
 }
 
+/** Minor units as raw amount input, without separators: 1081000 -> "10810.00". Fills an amount field for editing. */
+fun amountInputText(minor: Long): String =
+    "${minor / 100}.${(minor % 100).toString().padStart(AMOUNT_DECIMALS, '0')}"
+
 /**
  * Formats raw amount input for display while it is not being edited. Returns null for empty
  * input, and the input unchanged when it cannot be parsed (e.g. too large).

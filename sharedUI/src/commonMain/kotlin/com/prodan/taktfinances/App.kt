@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.prodan.taktfinances.accounts.navigation.AddAccountRoute
+import com.prodan.taktfinances.accounts.navigation.accountDetailRoute
+import com.prodan.taktfinances.accounts.navigation.accountDetailScreen
 import com.prodan.taktfinances.accounts.navigation.addAccountScreen
 import com.prodan.taktfinances.di.AppDependencies
 import com.prodan.taktfinances.home.navigation.HomeRoute
@@ -38,10 +40,15 @@ fun App(dependencies: AppDependencies, contrast: ThemeContrast = ThemeContrast.S
             homeScreen(
                 accounts = dependencies.accountRepository,
                 onNavigateToAddAccount = { navController.navigate(AddAccountRoute) },
+                onNavigateToAccount = { id, checkIn -> navController.navigate(accountDetailRoute(id, checkIn)) },
             )
             addAccountScreen(
                 repository = dependencies.accountRepository,
                 onClose = { navController.popBackStack() },
+            )
+            accountDetailScreen(
+                repository = dependencies.accountRepository,
+                onBack = { navController.popBackStack() },
             )
         }
     }

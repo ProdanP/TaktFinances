@@ -32,6 +32,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core"))
             api(libs.room3.runtime)
+            api(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutinesCore)
             implementation(libs.koin.core)
         }

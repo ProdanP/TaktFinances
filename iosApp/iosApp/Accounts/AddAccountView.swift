@@ -107,6 +107,10 @@ struct AddAccountView: View {
         textField("Salary, Savings, …", text: nameBinding, field: .name, palette: palette)
             .textInputAutocapitalization(.sentences)
 
+        if !state.showsAmount {
+            investmentNotice(palette: palette)
+        }
+
         detailsSection(state, palette: palette)
     }
 
@@ -118,21 +122,29 @@ struct AddAccountView: View {
             bank: state.details.bank,
             name: state.name,
             last4: state.details.last4,
-            amountLabel: "Starting balance",
+            amountLabel: state.showsAmount ? amountLabel : "Balance",
             palette: palette
         ) {
-            FilteredTextField(
-                placeholder: "",
-                prompt: Text("0.00").foregroundStyle(palette.onPrimary.opacity(0.45)),
-                value: amountBinding
-            )
-            .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
-            .keyboardType(.decimalPad)
-            .focused($focus, equals: .amount)
-            .accessibilityLabel("Starting balance")
+            if state.showsAmount {
+                FilteredTextField(
+                    placeholder: "",
+                    prompt: Text("0.00").foregroundStyle(palette.onPrimary.opacity(0.45)),
+                    value: amountBinding
+                )
+                .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
+                .keyboardType(.decimalPad)
+                .focused($focus, equals: .amount)
+                .accessibilityLabel(amountLabel)
+            } else {
+                // An Investment starts at 0.00 and is valued by trades; only its currency is chosen here.
+                Text(AmountInputKt.formatAmount(minor: 0))
+                    .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(palette.onPrimary.opacity(0.6))
+                Spacer(minLength: 0)
+            }
             currencyMenu(state, palette: palette)
         } footer: {
-            if state.visibleErrors.contains(.amount) {
+            if state.showsAmount && state.visibleErrors.contains(.amount) {
                 Label("Enter an amount", systemImage: "exclamationmark.circle")
                     .foregroundStyle(palette.errorContainer)
             } else {
@@ -141,6 +153,24 @@ struct AddAccountView: View {
             }
         }
         .padding(.top, 8)
+    }
+
+    /// Label of the Bank and Loan amount: the balance becomes the current month's entry.
+    private var amountLabel: String { "Balance this month" }
+
+    private func investmentNotice(palette: FinancesColorScheme) -> some View {
+        Label {
+            Text("Investments are tracked by trades. You'll add your holdings as trades after saving.")
+                .font(.subheadline)
+        } icon: {
+            Image(systemName: "info.circle")
+        }
+        .foregroundStyle(palette.onTertiaryContainer)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(palette.tertiaryContainer))
+        .padding(.top, 16)
     }
 
     private func currencyMenu(_ state: AddAccountState, palette: FinancesColorScheme) -> some View {

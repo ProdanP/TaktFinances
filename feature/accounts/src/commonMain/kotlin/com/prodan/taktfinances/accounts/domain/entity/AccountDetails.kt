@@ -26,7 +26,7 @@ sealed interface AccountDetails {
     }
 }
 
-/** Every optional detail input; [AddAccount] reads only the fields that belong to the account type. */
+/** Every optional detail input; [AddAccountUseCase] reads only the fields that belong to the account type. */
 data class AccountDetailsDraft(
     val bank: Bank? = null,
     val bankAccountKind: BankAccountKind? = null,

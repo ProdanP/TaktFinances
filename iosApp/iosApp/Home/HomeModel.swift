@@ -5,6 +5,33 @@ struct HomeState {
     var destinations: [HomeDestination] = []
     var selected: HomeDestination = .dashboard
     var finances: MyFinancesContent = .loading
+    /// Each account's current balance by id, from the last successful read.
+    var balances: [Int64: Int64] = [:]
+}
+
+/// What "Recent activity" shows for the selected account.
+enum RecentActivity {
+    /// Newest first, at most five: month label and formatted balance; followed by "See all".
+    case entries([(month: String, amount: String)], currency: String)
+    /// A Monthly account with only its start month: "No check-ins yet" and a "Check in" action.
+    case noCheckIns
+    /// An account tracked by trades that has none yet: "No trades yet", no action.
+    case noTrades
+
+    init(_ saved: SavedAccount) {
+        guard let period = saved.period as? PeriodMonthly else {
+            self = .noTrades
+            return
+        }
+        guard period.hasCheckIns else {
+            self = .noCheckIns
+            return
+        }
+        let rows = period.recentEntries(limit: TrackingKt.RECENT_ENTRIES).map {
+            (month: ChangeFormatKt.monthLabel(month: $0.month), amount: AmountInputKt.formatAmount(minor: $0.amountMinor))
+        }
+        self = .entries(rows, currency: saved.account.currency.code)
+    }
 }
 
 /// What the My Finances tab shows.
@@ -21,7 +48,7 @@ enum MyFinancesContent {
 
 enum HomeIntent {
     case destinationSelected(HomeDestination)
-    /// My Finances became visible (first appearance or returning from Add Account).
+    /// My Finances became visible (first appearance, or returning from Add Account or Account Detail).
     case shown
     case accountSelected(Int64)
     case previousTapped
@@ -67,6 +94,8 @@ final class HomeModel {
                 state.finances = .failed
                 return
             }
+            let today = TodayKt.today()
+            state.balances = Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0.balanceMinor(today: today)) })
             state.finances = content(for: list)
         }
     }

@@ -5,9 +5,12 @@ import SwiftUI
 /// column on iPad).
 struct MyFinancesView: View {
     let content: MyFinancesContent
+    let balances: [Int64: Int64]
     let palette: FinancesColorScheme
     let send: (HomeIntent) -> Void
     let onAddFirstAccount: () -> Void
+    /// Opens Account Detail; `checkIn` also opens its check-in sheet for the current month.
+    let onOpenAccount: (_ id: Int64, _ checkIn: Bool) -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -75,12 +78,19 @@ struct MyFinancesView: View {
         .focusEffectDisabled()
         .onKeyPress(.leftArrow) { send(.previousTapped); return .handled }
         .onKeyPress(.rightArrow) { send(.nextTapped); return .handled }
+        .onKeyPress(.return) { onOpenAccount(selectedId, false); return .handled }
     }
 
     private func swiper(_ accounts: [SavedAccount], selectedId: Int64, margin: CGFloat) -> some View {
-        AccountSwiper(accounts: accounts, selectedId: selectedId, margin: margin, palette: palette) { id in
-            send(.accountSelected(id))
-        }
+        AccountSwiper(
+            accounts: accounts,
+            balances: balances,
+            selectedId: selectedId,
+            margin: margin,
+            palette: palette,
+            onSelect: { send(.accountSelected($0)) },
+            onOpen: { onOpenAccount($0, false) }
+        )
     }
 
     private func arrow(_ systemImage: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
@@ -113,28 +123,69 @@ struct MyFinancesView: View {
     // MARK: Activity
 
     private func recentActivity(_ saved: SavedAccount) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Recent activity")
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Text(saved.account.name)
-                .font(.footnote)
-                .foregroundStyle(palette.onSurfaceVariant)
-                .lineLimit(1)
-            VStack(spacing: 8) {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.title)
-                    .foregroundStyle(palette.onSurfaceVariant)
-                Text("No transactions yet")
-                    .font(.subheadline)
-                    .foregroundStyle(palette.onSurfaceVariant)
+        let activity = RecentActivity(saved)
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Recent activity")
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(saved.account.name)
+                        .font(.footnote)
+                        .foregroundStyle(palette.onSurfaceVariant)
+                        .lineLimit(1)
+                }
+                Spacer()
+                if case .entries = activity {
+                    Button("See all") { onOpenAccount(saved.id, false) }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(palette.primary)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
+            switch activity {
+            case let .entries(rows, currency):
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        HStack(spacing: 14) {
+                            Image(systemName: "calendar")
+                                .foregroundStyle(palette.onSecondaryContainer)
+                                .frame(width: 40, height: 40)
+                                .background(Circle().fill(palette.secondaryContainer))
+                            Text(row.month)
+                            Spacer()
+                            Text("\(row.amount) \(currency)").monospacedDigit()
+                        }
+                        .padding(.vertical, 8)
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                .padding(.top, 8)
+            case .noCheckIns:
+                emptyActivity(systemImage: "calendar.badge.checkmark", message: "No check-ins yet") {
+                    Button("Check in") { onOpenAccount(saved.id, true) }
+                        .buttonStyle(.bordered)
+                }
+            case .noTrades:
+                emptyActivity(systemImage: "list.bullet.rectangle", message: "No trades yet") { EmptyView() }
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(palette.surfaceContainerLow))
+    }
+
+    private func emptyActivity<Action: View>(systemImage: String, message: String, @ViewBuilder action: () -> Action) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.title)
+                .foregroundStyle(palette.onSurfaceVariant)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(palette.onSurfaceVariant)
+            action().padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     // MARK: Empty and failure
@@ -183,10 +234,12 @@ struct MyFinancesView: View {
 /// scroll position is local so it can follow a selection whose card was only just added.
 private struct AccountSwiper: View {
     let accounts: [SavedAccount]
+    let balances: [Int64: Int64]
     let selectedId: Int64
     let margin: CGFloat
     let palette: FinancesColorScheme
     let onSelect: (Int64) -> Void
+    let onOpen: (Int64) -> Void
 
     @State private var scrolledId: Int64?
 
@@ -194,9 +247,13 @@ private struct AccountSwiper: View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 12) {
                 ForEach(accounts, id: \.id) { saved in
-                    SavedAccountCardView(account: saved.account, palette: palette)
-                        .containerRelativeFrame(.horizontal)
-                        .id(saved.id)
+                    Button { onOpen(saved.id) } label: {
+                        SavedAccountCardView(account: saved.account, balanceMinor: balances[saved.id] ?? 0, palette: palette)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the account")
+                    .containerRelativeFrame(.horizontal)
+                    .id(saved.id)
                 }
             }
             .scrollTargetLayout()

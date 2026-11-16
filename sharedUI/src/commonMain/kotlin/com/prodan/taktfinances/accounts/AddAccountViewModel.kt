@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.prodan.taktfinances.accounts.domain.entity.AccountDetailsDraft
 import com.prodan.taktfinances.accounts.domain.entity.FormField
 import com.prodan.taktfinances.accounts.domain.entity.filterAmountInput
-import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import com.prodan.taktfinances.accounts.domain.entity.today
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.AddAccountResult
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -15,9 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
+/** [today] dates the new account; tests pass a fixed date. */
 class AddAccountViewModel(
-    private val addAccount: AddAccount,
+    private val addAccount: AddAccountUseCase,
+    private val today: () -> LocalDate = ::today,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddAccountState())
     val state: StateFlow<AddAccountState> = _state.asStateFlow()
@@ -97,7 +101,7 @@ class AddAccountViewModel(
         if (!current.canSave) return
         _state.update { it.copy(saving = true, saveFailed = false) }
         viewModelScope.launch {
-            val result = addAccount(current.type, current.name, current.currency, current.amount, current.details)
+            val result = addAccount(current.type, current.name, current.currency, current.amount, current.details, today())
             when (result) {
                 is AddAccountResult.Created -> {
                     _state.update { it.copy(saving = false) }

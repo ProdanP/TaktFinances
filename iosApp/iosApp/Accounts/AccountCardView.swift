@@ -55,9 +55,10 @@ struct AccountCardView<Amount: View, Footer: View>: View {
     }
 }
 
-/// A saved account as a read-only card.
+/// A saved account as a read-only card showing its current balance.
 struct SavedAccountCardView: View {
     let account: FinanceAccount
+    let balanceMinor: Int64
     let palette: FinancesColorScheme
 
     var body: some View {
@@ -70,7 +71,7 @@ struct SavedAccountCardView: View {
             amountLabel: "Balance",
             palette: palette
         ) {
-            Text(AmountInputKt.formatAmount(minor: account.amountMinor))
+            Text(AmountInputKt.formatAmount(minor: balanceMinor))
                 .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)

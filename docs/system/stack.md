@@ -2,7 +2,7 @@
 
 Versions live in `gradle/libs.versions.toml`. This file is the set of allowed choices. Add a library here before adding it to the version catalog. Add the dependency to a module only when a type in that module uses it.
 
-`domain` stays on the Kotlin standard library. Room and Ktor are `data` tools. Koin is a composition-root tool, plus each feature's module file.
+`domain` stays on the Kotlin standard library and `kotlinx-datetime`. Room and Ktor are `data` tools. Koin is a composition-root tool, plus each feature's module file.
 
 ## In use
 
@@ -10,7 +10,8 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 - Compose Multiplatform and Material 3 for Android and desktop UI.
 - Compose Material Icons Extended (`org.jetbrains.compose.material:material-icons-extended`, 1.7.3) for navigation and screen icons on Android and desktop.
 - Material 3 window size class (`org.jetbrains.compose.material3:material3-window-size-class`) for `WindowWidthSizeClass` on Android and desktop.
-- SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework.
+- SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework. Charts on iOS use Swift Charts (system framework); Android and desktop draw charts with Compose `Canvas`, with no chart library.
+- kotlinx-datetime (`org.jetbrains.kotlinx:kotlinx-datetime`) for calendar dates (`LocalDate`), months (`YearMonth`) and today's date in the device time zone. It is the one library `domain` may use besides the standard library and `:core`; `:feature:accounts` exposes it with `api`, so `SharedLogic` exports its types to Swift.
 - AndroidX Activity Compose for the Android entry. AndroidX Lifecycle ViewModel and Runtime Compose for Compose state holders.
 - kotlinx.coroutines, including the Swing dispatcher on desktop. `kotlinx-coroutines-core` is a `data` dependency of a feature that moves blocking work off the caller's thread.
 - kotlinx-coroutines-test for coroutine and Flow tests in `commonTest`.

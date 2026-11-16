@@ -30,13 +30,17 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +51,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
@@ -66,9 +72,10 @@ import androidx.compose.ui.unit.dp
 import com.prodan.taktfinances.AdaptiveLayout
 import com.prodan.taktfinances.WidthClass
 import com.prodan.taktfinances.accounts.components.SavedAccountCard
-import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.home.HomeIntent
+import com.prodan.taktfinances.home.models.ActivityRow
 import com.prodan.taktfinances.home.models.MyFinancesContent
+import com.prodan.taktfinances.home.models.RecentActivityModel
 import com.prodan.taktfinances.widthClass
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -113,7 +120,8 @@ internal fun MyFinancesBody(
                             SwiperWithDots(content, showArrows, onIntent)
                         }
                         RecentActivity(
-                            account = content.accounts[content.selectedIndex],
+                            content = content,
+                            onIntent = onIntent,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
                     }
@@ -128,7 +136,8 @@ internal fun MyFinancesBody(
                         SwiperWithDots(content, showArrows, onIntent)
                         Spacer(Modifier.height(16.dp))
                         RecentActivity(
-                            account = content.accounts[content.selectedIndex],
+                            content = content,
+                            onIntent = onIntent,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         )
                     }
@@ -175,6 +184,7 @@ private fun AccountSwiper(content: MyFinancesContent.Accounts, showArrows: Boole
                 when (event.key) {
                     Key.DirectionLeft -> { onIntent(HomeIntent.PreviousTapped); true }
                     Key.DirectionRight -> { onIntent(HomeIntent.NextTapped); true }
+                    Key.Enter, Key.NumPadEnter -> { onIntent(HomeIntent.AccountTapped(currentContent.selectedId)); true }
                     else -> false
                 }
             }
@@ -196,7 +206,14 @@ private fun AccountSwiper(content: MyFinancesContent.Accounts, showArrows: Boole
             key = { content.accounts[it].id },
             modifier = Modifier.weight(1f),
         ) { page ->
-            SavedAccountCard(content.accounts[page].account)
+            val account = content.accounts[page]
+            SavedAccountCard(
+                account = account.account,
+                balanceMinor = content.balances[account.id] ?: 0,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable(onClickLabel = "Open ${account.account.name}") { onIntent(HomeIntent.AccountTapped(account.id)) },
+            )
         }
         if (showArrows) {
             FilledTonalIconButton(
@@ -232,44 +249,92 @@ private fun PageDots(count: Int, selected: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** Activity of the selected account; empty until transactions exist. */
+/** Activity of the selected account: its latest monthly entries, or an empty message with its action. */
 @Composable
-private fun RecentActivity(account: SavedAccount, modifier: Modifier = Modifier) {
+private fun RecentActivity(content: MyFinancesContent.Accounts, onIntent: (HomeIntent) -> Unit, modifier: Modifier = Modifier) {
+    val account = content.selected
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(24.dp),
         modifier = modifier,
     ) {
-        Column(Modifier.padding(20.dp)) {
-            Text(
-                "Recent activity",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(
-                account.account.name,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Outlined.ReceiptLong,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(32.dp),
+        Column(Modifier.padding(vertical = 20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 20.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Recent activity",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    Text(
+                        account.account.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (content.activity is RecentActivityModel.Entries) {
+                    TextButton(onClick = { onIntent(HomeIntent.SeeAllTapped(account.id)) }) { Text("See all") }
+                }
+            }
+            when (val activity = content.activity) {
+                is RecentActivityModel.Entries -> Column(Modifier.padding(top = 8.dp)) {
+                    activity.rows.forEach { row -> ActivityRowItem(row, activity.currency) }
+                }
+                RecentActivityModel.NoCheckIns -> EmptyActivity(
+                    icon = Icons.Outlined.EventAvailable,
+                    message = "No check-ins yet",
+                    action = "Check in",
+                    onAction = { onIntent(HomeIntent.CheckInTapped(account.id)) },
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "No transactions yet",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                RecentActivityModel.NoTrades -> EmptyActivity(
+                    icon = Icons.AutoMirrored.Outlined.ReceiptLong,
+                    message = "No trades yet",
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ActivityRowItem(row: ActivityRow, currency: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .semantics(mergeDescendants = true) {},
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+        ) {
+            Icon(
+                Icons.Outlined.Event,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Text(row.month, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text("${row.amount} $currency", style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun EmptyActivity(icon: ImageVector, message: String, action: String? = null, onAction: () -> Unit = {}) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (action != null) {
+            Spacer(Modifier.height(12.dp))
+            FilledTonalButton(onClick = onAction) { Text(action) }
         }
     }
 }

@@ -7,8 +7,16 @@ import com.prodan.taktfinances.home.HomeScreen
 
 const val HomeRoute = "home"
 
-fun NavGraphBuilder.homeScreen(accounts: AccountRepository, onNavigateToAddAccount: () -> Unit) {
+fun NavGraphBuilder.homeScreen(
+    accounts: AccountRepository,
+    onNavigateToAddAccount: () -> Unit,
+    onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
+) {
     composable(HomeRoute) {
-        HomeScreen(accounts = accounts, onNavigateToAddAccount = onNavigateToAddAccount)
+        HomeScreen(
+            accounts = accounts,
+            onNavigateToAddAccount = onNavigateToAddAccount,
+            onNavigateToAccount = onNavigateToAccount,
+        )
     }
 }

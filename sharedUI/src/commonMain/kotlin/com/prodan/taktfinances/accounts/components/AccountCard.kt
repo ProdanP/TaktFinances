@@ -99,9 +99,9 @@ internal fun AccountCardSummary(text: String) {
     )
 }
 
-/** A saved account as a read-only card. */
+/** A saved account as a read-only card showing its current [balanceMinor]. */
 @Composable
-internal fun SavedAccountCard(account: FinanceAccount, modifier: Modifier = Modifier) {
+internal fun SavedAccountCard(account: FinanceAccount, balanceMinor: Long, modifier: Modifier = Modifier) {
     val details = account.details
     val onPrimary = MaterialTheme.colorScheme.onPrimary
     AccountCard(
@@ -114,7 +114,7 @@ internal fun SavedAccountCard(account: FinanceAccount, modifier: Modifier = Modi
         footer = { AccountCardSummary(accountSummary(details)) },
     ) {
         Text(
-            text = formatAmount(account.amountMinor),
+            text = formatAmount(balanceMinor),
             style = MaterialTheme.typography.displaySmall.copy(color = onPrimary, fontWeight = FontWeight.Medium),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

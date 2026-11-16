@@ -13,13 +13,16 @@ sealed interface MyFinancesContent {
     /** No account exists yet. */
     data object Empty : MyFinancesContent
 
-    /** [accounts] oldest first; [selectedId] is one of their ids. */
+    /** [accounts] oldest first; [selectedId] is one of their ids; [balances] is each account's current balance by id. */
     data class Accounts(
         val accounts: List<SavedAccount>,
         val selectedId: Long,
+        val balances: Map<Long, Long> = emptyMap(),
     ) : MyFinancesContent {
         val selectedIndex: Int get() = accounts.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
         val canSelectPrevious: Boolean get() = selectedIndex > 0
         val canSelectNext: Boolean get() = selectedIndex < accounts.lastIndex
+        val selected: SavedAccount get() = accounts[selectedIndex]
+        val activity: RecentActivityModel get() = selected.toRecentActivity()
     }
 }

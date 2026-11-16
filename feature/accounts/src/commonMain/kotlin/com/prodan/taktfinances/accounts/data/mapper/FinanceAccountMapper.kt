@@ -15,9 +15,11 @@ import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
 import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.Period
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import kotlinx.datetime.LocalDate
 
-/** A row that does not map back to the domain (missing detail for its type) is a read failure. */
+/** A row that does not map back to the domain (missing detail or period) is a read failure. */
 internal class UnreadableRowException(message: String) : Exception(message)
 
 internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
@@ -29,7 +31,7 @@ internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
         type = type.toDbo(),
         name = name,
         currency = currency.toDbo(),
-        amountMinor = amountMinor,
+        createdOn = createdOn.toString(),
         bank = bank?.bank?.toDbo(),
         bankKind = bank?.kind?.toDbo(),
         last4 = bank?.last4,
@@ -40,7 +42,8 @@ internal fun FinanceAccount.toDbo(): FinanceAccountEntity {
     )
 }
 
-internal fun FinanceAccountEntity.toDomain(): SavedAccount {
+/** The stored account with its active [period]. */
+internal fun FinanceAccountEntity.toDomain(period: Period): SavedAccount {
     val details = when (type) {
         AccountTypeDbo.BANK -> AccountDetails.BankDetails(
             bank = required(bank, "bank").toDomain(),
@@ -59,10 +62,10 @@ internal fun FinanceAccountEntity.toDomain(): SavedAccount {
     val account = FinanceAccount(
         name = name,
         currency = currency.toDomain(),
-        amountMinor = amountMinor,
         details = details,
+        createdOn = LocalDate.parse(createdOn),
     )
-    return SavedAccount(id, account)
+    return SavedAccount(id, account, period)
 }
 
 private fun <T : Any> FinanceAccountEntity.required(value: T?, column: String): T =

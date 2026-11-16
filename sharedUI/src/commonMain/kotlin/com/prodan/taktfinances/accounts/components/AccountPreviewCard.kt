@@ -40,6 +40,7 @@ import com.prodan.taktfinances.accounts.AddAccountState
 import com.prodan.taktfinances.accounts.domain.entity.AccountType
 import com.prodan.taktfinances.accounts.domain.entity.FormField
 import com.prodan.taktfinances.accounts.domain.entity.accountSummary
+import com.prodan.taktfinances.accounts.domain.entity.formatAmount
 
 internal val AccountType.icon: ImageVector
     get() = when (this) {
@@ -48,7 +49,10 @@ internal val AccountType.icon: ImageVector
         AccountType.Loan -> Icons.Filled.SwapHoriz
     }
 
-/** Live preview of the account being created; the amount and currency are edited in place. */
+/**
+ * Live preview of the account being created; the amount and currency are edited in place. An
+ * Investment has no amount: the preview shows 0.00 and only the currency can be changed.
+ */
 @Composable
 internal fun AccountPreviewCard(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit) {
     AccountCard(
@@ -56,19 +60,31 @@ internal fun AccountPreviewCard(state: AddAccountState, onIntent: (AddAccountInt
         bank = state.details.bank,
         name = state.name,
         last4 = state.details.last4,
-        amountLabel = "Starting balance",
+        amountLabel = if (state.showsAmount) AMOUNT_LABEL else "Balance",
         footer = {
-            if (FormField.Amount in state.visibleErrors) {
+            if (state.showsAmount && FormField.Amount in state.visibleErrors) {
                 FieldError(FormField.Amount.errorText(), color = MaterialTheme.colorScheme.errorContainer)
             } else {
                 AccountCardSummary(accountSummary(state.type, state.details).orEmpty())
             }
         },
     ) {
-        AmountInput(state, onIntent, Modifier.weight(1f))
+        if (state.showsAmount) {
+            AmountInput(state, onIntent, Modifier.weight(1f))
+        } else {
+            val onPrimary = MaterialTheme.colorScheme.onPrimary
+            Text(
+                text = formatAmount(0),
+                style = MaterialTheme.typography.displaySmall.copy(color = onPrimary.copy(alpha = 0.6f), fontWeight = FontWeight.Medium),
+                modifier = Modifier.weight(1f),
+            )
+        }
         CurrencyPill(state, onIntent)
     }
 }
+
+/** Label of the Bank and Loan amount: the balance becomes the current month's entry. */
+private const val AMOUNT_LABEL = "Balance this month"
 
 @Composable
 private fun AmountInput(state: AddAccountState, onIntent: (AddAccountIntent) -> Unit, modifier: Modifier) {
@@ -88,7 +104,7 @@ private fun AmountInput(state: AddAccountState, onIntent: (AddAccountIntent) -> 
             }
         },
         modifier = modifier
-            .semantics { contentDescription = "Starting balance" }
+            .semantics { contentDescription = AMOUNT_LABEL }
             .onFocusChanged { onIntent(AddAccountIntent.FieldFocusChanged(FormField.Amount, it.isFocused)) },
     )
 }
