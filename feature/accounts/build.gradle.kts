@@ -33,6 +33,7 @@ kotlin {
             api(project(":core"))
             api(libs.room3.runtime)
             implementation(libs.kotlinx.coroutinesCore)
+            implementation(libs.koin.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

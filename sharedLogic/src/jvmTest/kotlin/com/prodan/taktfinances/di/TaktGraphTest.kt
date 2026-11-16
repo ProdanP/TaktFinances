@@ -1,6 +1,7 @@
 package com.prodan.taktfinances.di
 
 import androidx.room3.Room
+import com.prodan.taktfinances.accounts.accountsModule
 import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
 import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount

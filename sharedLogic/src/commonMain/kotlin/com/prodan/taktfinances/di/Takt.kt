@@ -1,8 +1,7 @@
 package com.prodan.taktfinances.di
 
-import com.prodan.taktfinances.accounts.createAccountRepository
+import com.prodan.taktfinances.accounts.accountsModule
 import com.prodan.taktfinances.accounts.data.local.FinanceAccountDao
-import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.database.AppDatabase
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -13,10 +12,6 @@ import org.koin.mp.KoinPlatform
 internal fun databaseModule(database: AppDatabase): Module = module {
     single<AppDatabase> { database }
     single<FinanceAccountDao> { get<AppDatabase>().financeAccountDao() }
-}
-
-internal val accountsModule: Module = module {
-    single<AccountRepository> { createAccountRepository(get()) }
 }
 
 internal fun taktModules(database: AppDatabase): List<Module> = listOf(databaseModule(database), accountsModule)

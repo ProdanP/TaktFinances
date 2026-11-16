@@ -2,7 +2,7 @@
 
 Versions live in `gradle/libs.versions.toml`. This file is the set of allowed choices. Add a library here before adding it to the version catalog. Add the dependency to a module only when a type in that module uses it.
 
-`domain` stays on the Kotlin standard library. Room, Ktor, and Koin are `data` and composition-root tools.
+`domain` stays on the Kotlin standard library. Room and Ktor are `data` tools. Koin is a composition-root tool, plus each feature's module file.
 
 ## In use
 
@@ -34,7 +34,7 @@ Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response 
 
 ## Dependency injection — Koin
 
-`io.insert-koin:koin-core`, and only in `:sharedLogic`, where the graph is built. `io.insert-koin:koin-test` checks the module graph in `:sharedLogic` tests.
+`io.insert-koin:koin-core`. `:sharedLogic` starts the graph and is the only place that resolves from it. Each `:feature:` module depends on it only for its one `<Name>Module.kt` file, which declares bindings. `io.insert-koin:koin-test` checks the module graph in `:sharedLogic` tests.
 
 Screens, use cases, repositories, and SwiftUI take constructor arguments. Do not call `get`, `inject`, or `koinInject` from a feature, a composable, or a Swift view.
 

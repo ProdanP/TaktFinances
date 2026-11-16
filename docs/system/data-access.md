@@ -1,6 +1,6 @@
 # Data access
 
-Room and Ktor stay in `data`. `:sharedLogic` creates one database and one `HttpClient`. A feature receives its DAOs and the client through its factory. It does not open SQLite, build a database, or build a client.
+Room and Ktor stay in `data`. `:sharedLogic` creates one database and one `HttpClient`. A feature's Koin module receives its DAOs and the client from that graph. It does not open SQLite, build a database, or build a client.
 
 The repository is the boundary. Its public methods return domain types. A call the screen can recover from returns `Outcome` from [errors.md](errors.md). Entities, DAOs, HTTP bodies, and Ktor or SQLite exceptions do not leave `data`.
 
@@ -21,7 +21,7 @@ The repository is the boundary. Its public methods return domain types. A call t
 - A column with a fixed set of values uses a storage enum in `data.local` (for example `BankKindDbo`), never a domain enum and never a raw `String`. Room stores the entry name as `TEXT`, so entry names are part of the schema: renaming or removing one needs a migration. Keeping them apart from the domain enums means a domain rename or title change never touches stored rows.
 - `data.mapper` contains the mappers between storage types and domain types, and nothing else.
 - `data` contains the repository implementation. Only `data` and `data.mapper` import `data.local`.
-- The factory takes the DAOs from `data.local` and passes them to the repository implementation.
+- The feature's Koin module binds the repository implementation; Koin passes it the DAOs that `:sharedLogic` provides.
 
 ## Mapping
 

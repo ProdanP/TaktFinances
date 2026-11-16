@@ -38,12 +38,16 @@ feature/<name>/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
 
 The domain packages are in [domain.md](domain.md). `data` holds the repository implementation. `data.local` holds the Room `@Entity` and `@Dao` types and the storage enums their columns use, and nothing else. `data.mapper` holds the `toDbo()` and `toDomain()` mappers between entities and domain types. See [data-access.md](data-access.md).
 
-`data` is `internal`. The module exposes one public factory the composition root calls:
+`data` is `internal`. The module exposes one public Koin module, `<Name>Module.kt` in the feature's root package, which binds its `internal` implementations to their domain interfaces. The composition root includes it:
 
 ```kotlin
-fun createAccountRepository(local: AccountStore): AccountRepository =
-    AccountRepositoryImpl(local)
+@HiddenFromObjC
+val accountsModule: Module = module {
+    singleOf(::AccountRepositoryImpl) bind AccountRepository::class
+}
 ```
+
+The module only declares bindings. It never calls `get`, `inject`, or `startKoin`; DAOs and the `HttpClient` come from `:sharedLogic`.
 
 Compose for that feature lives in `sharedUI` at `com.prodan.taktfinances.<name>`, split into `components/`, `models/` and `navigation/` and the screen files described in [presentation.md](presentation.md). SwiftUI for that feature lives in `iosApp/iosApp/<Name>/`. Both call domain types only.
 
@@ -61,7 +65,7 @@ Compose / SwiftUI  →  domain  ←  data
 - `data` does not import Compose, Android UI, or Swift.
 - Platform APIs stay in `androidMain`, `iosMain`, or `jvmMain` and implement an interface declared in `commonMain`.
 
-`:sharedLogic` is the only place that builds the graph. It may use Koin to do that. Shells pass in platform ports (a file path, a database driver). They do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Screens and SwiftUI receive already-built domain types through constructors.
+`:sharedLogic` is the only place that builds the graph: it starts Koin with the database module and every feature's module. Shells pass in platform ports (a file path, a database driver). They do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Screens and SwiftUI receive already-built domain types through constructors.
 
 ## Orthogonality
 
@@ -95,9 +99,9 @@ Use these. Skip a pattern that has one call site.
 | Use case | One user action coordinates a rule or several repository calls. |
 | Adapter | A platform API must appear as a `commonMain` port. The source set is the adapter. |
 | Strategy | A rule varies and the composition root should pick the variant. One interface, small implementations. An `if` with two branches is enough otherwise. |
-| Composition root | Creating implementations. That is `:sharedLogic`, not a screen and not a feature's domain. Koin is allowed only there. |
+| Composition root | Starting the graph and resolving from it. That is `:sharedLogic`, not a screen and not a feature's domain. A feature only declares its Koin module. |
 
-Do not resolve dependencies from Koin outside `:sharedLogic`. Do not add a base class per feature. Features share structure by copying the layout above, not by inheriting from a common feature type.
+Do not resolve dependencies from Koin outside `:sharedLogic`, and do not import Koin in a feature's `domain` or `data`. Do not add a base class per feature. Features share structure by copying the layout above, not by inheriting from a common feature type.
 
 ## Tests
 

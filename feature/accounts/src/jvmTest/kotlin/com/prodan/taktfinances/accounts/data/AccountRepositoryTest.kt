@@ -2,7 +2,6 @@ package com.prodan.taktfinances.accounts.data
 
 import androidx.room3.executeSQL
 import androidx.room3.useWriterConnection
-import com.prodan.taktfinances.accounts.createAccountRepository
 import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
 import com.prodan.taktfinances.accounts.domain.entity.Bank
 import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
@@ -25,7 +24,7 @@ private val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.Loan
 
 class AccountRepositoryTest {
     private val database = inMemoryAccountsDatabase()
-    private val repository = createAccountRepository(database.financeAccountDao())
+    private val repository = AccountRepositoryImpl(database.financeAccountDao())
 
     @AfterTest
     fun close() = database.close()
