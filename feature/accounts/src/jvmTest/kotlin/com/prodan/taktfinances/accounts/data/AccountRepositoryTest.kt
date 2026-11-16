@@ -1,0 +1,86 @@
+package com.prodan.taktfinances.accounts.data
+
+import androidx.room3.executeSQL
+import androidx.room3.useWriterConnection
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.core.Outcome
+import com.prodan.taktfinances.core.Reason
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlinx.coroutines.test.runTest
+
+private val salary = FinanceAccount("Salary", Currency.MDL, 250000, AccountDetails.BankDetails(Bank.Maib, BankAccountKind.Savings, "0421"))
+private val brokerage = FinanceAccount("Brokerage", Currency.EUR, 150050, AccountDetails.InvestmentDetails(InvestmentKind.StocksEtf, "XTB"))
+private val car = FinanceAccount("Car", Currency.MDL, 50000, AccountDetails.LoanDetails(LoanDirection.Borrowed, "Ion"))
+
+class AccountRepositoryTest {
+    private val database = inMemoryAccountsDatabase()
+    private val repository = AccountRepositoryImpl(database.financeAccountDao())
+
+    @AfterTest
+    fun close() = database.close()
+
+    private suspend fun corrupt(sql: String) = database.useWriterConnection { it.executeSQL(sql) }
+
+    private fun <T : Any> ok(outcome: Outcome<T>): T = assertIs<Outcome.Ok<T>>(outcome).value
+
+    @Test
+    fun everyTypeRoundTrips() = runTest {
+        for (account in listOf(salary, brokerage, car)) {
+            val saved = ok(repository.add(account))
+            assertEquals(account, saved.account)
+        }
+        assertEquals(listOf(salary, brokerage, car), ok(repository.all()).map { it.account })
+    }
+
+    @Test
+    fun bankWithoutLast4RoundTrips() = runTest {
+        val account = salary.copy(details = AccountDetails.BankDetails(Bank.Other, BankAccountKind.Card, null))
+        ok(repository.add(account))
+        assertEquals(listOf(account), ok(repository.all()).map { it.account })
+    }
+
+    @Test
+    fun accountsAreOrderedByCreationWithGrowingIds() = runTest {
+        val first = ok(repository.add(car))
+        val second = ok(repository.add(salary))
+        val all = ok(repository.all())
+        assertEquals(listOf(first, second), all)
+        assertEquals(true, second.id > first.id)
+    }
+
+    @Test
+    fun emptyStoreGivesEmptyList() = runTest {
+        assertEquals(emptyList<SavedAccount>(), ok(repository.all()))
+    }
+
+    @Test
+    fun unknownCodeIsUnavailable() = runTest {
+        ok(repository.add(salary))
+        corrupt("UPDATE finance_account SET bank = 'NOPE'")
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
+    }
+
+    @Test
+    fun missingDetailIsUnavailable() = runTest {
+        ok(repository.add(car))
+        corrupt("UPDATE finance_account SET counterparty = NULL")
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
+    }
+
+    @Test
+    fun closedStoreIsUnavailable() = runTest {
+        database.close()
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.add(salary))
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
+    }
+}

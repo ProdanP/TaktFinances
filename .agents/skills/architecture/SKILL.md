@@ -20,7 +20,7 @@ Read [docs/system/architecture.md](../../../docs/system/architecture.md) before 
 
 - [ ] `:feature:<name>` Kotlin Multiplatform module with Android, `iosArm64`, `iosSimulatorArm64`, and JVM, matching `:sharedLogic`
 - [ ] Register it in `settings.gradle.kts`
-- [ ] `domain` public, `data` internal, one public factory
+- [ ] `domain` public (`entity/`, `error/`, `usecase/`, `<Name>Repository.kt`, with no import from `data`, as in [docs/system/domain.md](../../../docs/system/domain.md)), `data` internal (repository implementation in `data`, Room entities and DAOs in `data.local`, `toDbo()`/`toDomain()` mappers in `data.mapper`), one public Koin module `<Name>Module.kt` (`@HiddenFromObjC`) that `:sharedLogic` includes in `taktModules`
 - [ ] `:sharedLogic` depends on it with `api`
 - [ ] `:sharedUI` depends on the module and uses domain types only
 - [ ] No dependency from this feature onto another `:feature:` module

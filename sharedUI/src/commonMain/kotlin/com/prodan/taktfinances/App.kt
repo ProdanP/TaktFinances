@@ -3,54 +3,46 @@ package com.prodan.taktfinances
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.prodan.taktfinances.accounts.AddAccountScreen
-import com.prodan.taktfinances.accounts.createAccountRepository
-import com.prodan.taktfinances.home.HomeScreen
-import com.prodan.taktfinances.onboarding.LandingScreen
+import com.prodan.taktfinances.accounts.navigation.AddAccountRoute
+import com.prodan.taktfinances.accounts.navigation.addAccountScreen
+import com.prodan.taktfinances.di.AppDependencies
+import com.prodan.taktfinances.home.navigation.HomeRoute
+import com.prodan.taktfinances.home.navigation.homeScreen
+import com.prodan.taktfinances.onboarding.navigation.LandingRoute
+import com.prodan.taktfinances.onboarding.navigation.landingScreen
 import com.prodan.taktfinances.theme.ThemeContrast
 import com.prodan.taktfinances.theme.financesColorScheme
 
-private const val RouteLanding = "landing"
-private const val RouteHome = "home"
-private const val RouteAddAccount = "add-account"
-
-// One repository for the app process, so it survives configuration changes.
-private val accountRepository by lazy { createAccountRepository() }
-
+/**
+ * [dependencies] come from the composition root in :sharedLogic; screens get them through constructors.
+ * Each feature declares its routes in its `navigation` package; this shell connects one feature to another.
+ */
 @Composable
-@Preview
-fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
+fun App(dependencies: AppDependencies, contrast: ThemeContrast = ThemeContrast.Standard) {
     val dark = isSystemInDarkTheme()
     MaterialExpressiveTheme(colorScheme = financesColorScheme(dark = dark, contrast = contrast)) {
         val navController = rememberNavController()
         NavHost(
             navController = navController,
-            startDestination = RouteLanding,
+            startDestination = LandingRoute,
         ) {
-            composable(RouteLanding) {
-                LandingScreen(
-                    onNavigateToHome = {
-                        navController.navigate(RouteHome) {
-                            popUpTo(RouteLanding) { inclusive = true }
-                        }
-                    },
-                )
-            }
-            composable(RouteHome) {
-                HomeScreen(
-                    onNavigateToAddAccount = { navController.navigate(RouteAddAccount) },
-                )
-            }
-            composable(RouteAddAccount) {
-                AddAccountScreen(
-                    repository = accountRepository,
-                    onClose = { navController.popBackStack() },
-                )
-            }
+            landingScreen(
+                onNavigateToHome = {
+                    navController.navigate(HomeRoute) {
+                        popUpTo(LandingRoute) { inclusive = true }
+                    }
+                },
+            )
+            homeScreen(
+                accounts = dependencies.accountRepository,
+                onNavigateToAddAccount = { navController.navigate(AddAccountRoute) },
+            )
+            addAccountScreen(
+                repository = dependencies.accountRepository,
+                onClose = { navController.popBackStack() },
+            )
         }
     }
 }

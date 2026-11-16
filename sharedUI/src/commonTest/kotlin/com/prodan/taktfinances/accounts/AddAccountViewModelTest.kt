@@ -1,24 +1,40 @@
 package com.prodan.taktfinances.accounts
 
-import com.prodan.taktfinances.accounts.domain.AccountDetails
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.AddAccount
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.BankAccountKind
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FormField
-import com.prodan.taktfinances.accounts.domain.InvestmentKind
-import com.prodan.taktfinances.accounts.domain.LoanDirection
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
+import com.prodan.taktfinances.FakeAccountRepository
+import com.prodan.taktfinances.accounts.domain.entity.AccountDetails
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccount
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AddAccountViewModelTest {
-    private val repository = createAccountRepository()
+    init {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
+
+    @AfterTest
+    fun resetDispatcher() = Dispatchers.resetMain()
+
+    private val repository = FakeAccountRepository()
     private val viewModel = AddAccountViewModel(AddAccount(repository))
     private val state get() = viewModel.state.value
 
@@ -170,7 +186,7 @@ class AddAccountViewModelTest {
     @Test
     fun saveWhileIncompleteDoesNothing() {
         send(AddAccountIntent.TypeSelected(AccountType.Loan), AddAccountIntent.SaveTapped)
-        assertTrue(repository.all().isEmpty())
+        assertTrue(repository.accounts.isEmpty())
     }
 
     @Test
@@ -185,7 +201,7 @@ class AddAccountViewModelTest {
             AddAccountIntent.SaveTapped,
         )
         assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
-        assertEquals(150050, repository.all().single().amountMinor)
+        assertEquals(150050, repository.accounts.single().amountMinor)
     }
 
     @Test
@@ -195,7 +211,7 @@ class AddAccountViewModelTest {
         assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
         assertEquals(
             AccountDetails.BankDetails(Bank.Maib, BankAccountKind.Savings, "0421"),
-            repository.all().single().details,
+            repository.accounts.single().details,
         )
     }
 
@@ -211,5 +227,56 @@ class AddAccountViewModelTest {
         assertEquals("Enter a counterparty", state.hint)
         send(AddAccountIntent.CounterpartyChanged("Ana"))
         assertTrue(state.canSave)
+    }
+
+    @Test
+    fun failedSaveKeepsEntriesAndShowsMessage() {
+        repository.failAdd = true
+        fillBank()
+        send(AddAccountIntent.SaveTapped)
+        assertTrue(state.saveFailed)
+        assertFalse(state.saving)
+        assertTrue(state.canSave)
+        assertEquals("Salary", state.name)
+        assertEquals("2500", state.amount)
+        assertEquals(Bank.Maib, state.details.bank)
+        assertTrue(repository.accounts.isEmpty())
+    }
+
+    @Test
+    fun editingClearsTheSaveFailure() {
+        repository.failAdd = true
+        fillBank()
+        send(AddAccountIntent.SaveTapped, AddAccountIntent.FieldFocusChanged(FormField.Name, true))
+        assertTrue(state.saveFailed)
+        send(AddAccountIntent.NameChanged("Salary 2"))
+        assertFalse(state.saveFailed)
+    }
+
+    @Test
+    fun retryAfterFailureSaves() = runTest {
+        repository.failAdd = true
+        fillBank()
+        send(AddAccountIntent.SaveTapped)
+        repository.failAdd = false
+        send(AddAccountIntent.SaveTapped)
+        assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
+        assertFalse(state.saveFailed)
+        assertEquals(1, repository.accounts.size)
+    }
+
+    @Test
+    fun doubleTapSavesOnce() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        repository.addGate = gate
+        fillBank()
+        send(AddAccountIntent.SaveTapped)
+        assertTrue(state.saving)
+        assertFalse(state.canSave)
+        send(AddAccountIntent.SaveTapped)
+        gate.complete(Unit)
+        assertEquals(AddAccountEffect.Saved, viewModel.effects.first())
+        assertEquals(1, repository.addCalls)
+        assertEquals(1, repository.accounts.size)
     }
 }

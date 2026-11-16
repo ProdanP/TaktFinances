@@ -8,16 +8,17 @@ private enum Route: Hashable {
 struct ContentView: View {
     @State private var showHome = false
     @State private var path: [Route] = []
-    @State private var accounts: AccountRepository = AccountsFactoryKt.createAccountRepository()
+    /// Built by the composition root in SharedLogic; passed to screens through their initialisers.
+    private let dependencies = AppDependencies()
 
     var body: some View {
         if showHome {
             NavigationStack(path: $path) {
-                HomeView(onAddAccount: { path.append(.addAccount) })
+                HomeView(repository: dependencies.accountRepository, onAddAccount: { path.append(.addAccount) })
                     .navigationDestination(for: Route.self) { route in
                         switch route {
                         case .addAccount:
-                            AddAccountView(repository: accounts, onClose: { path.removeAll() })
+                            AddAccountView(repository: dependencies.accountRepository, onClose: { path.removeAll() })
                         }
                     }
             }

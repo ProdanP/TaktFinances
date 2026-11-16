@@ -21,31 +21,24 @@ struct AddAccountView: View {
     var body: some View {
         let palette = FinancesPalette.scheme(colorScheme: colorScheme, contrast: colorSchemeContrast)
         let state = model.state
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                previewCard(state, palette: palette)
-                Picker("Type", selection: typeBinding) {
-                    ForEach(state.types, id: \.name) { type in
-                        Text(type.title).tag(type)
-                    }
+        GeometryReader { geometry in
+            let size = geometry.size
+            // Preview beside the form only when both fit and the height can keep the preview
+            // pinned; otherwise one scrolling column (iPhone, iPhone landscape).
+            let twoColumns = size.width >= AdaptiveLayout.twoPaneWidth && size.height >= AdaptiveLayout.shortHeight
+            Group {
+                if twoColumns {
+                    twoColumnLayout(state, palette: palette)
+                } else {
+                    singleColumnLayout(
+                        state,
+                        palette: palette,
+                        maxWidth: size.width < AdaptiveLayout.mediumWidth ? AdaptiveLayout.phoneColumnWidth : AdaptiveLayout.formColumnWidth
+                    )
                 }
-                .pickerStyle(.segmented)
-                .padding(.top, 16)
-
-                sectionLabel("Name", isError: state.visibleErrors.contains(.name), palette: palette)
-                textField("Salary, Savings, …", text: nameBinding, field: .name, palette: palette)
-                    .textInputAutocapitalization(.sentences)
-
-                detailsSection(state, palette: palette)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
-            .frame(maxWidth: 520)
-            .frame(maxWidth: .infinity)
         }
-        .scrollDismissesKeyboard(.interactively)
         .background(palette.background)
-        .safeAreaInset(edge: .bottom) { saveBar(state, palette: palette) }
         .navigationTitle("New account")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -64,63 +57,89 @@ struct AddAccountView: View {
         }
     }
 
+    private func singleColumnLayout(_ state: AddAccountState, palette: FinancesColorScheme, maxWidth: CGFloat) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                previewCard(state, palette: palette)
+                formFields(state, palette: palette)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+            .frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom) { saveBar(state, palette: palette, maxWidth: maxWidth) }
+    }
+
+    /// Wide windows: the preview stays in view on the left while the form scrolls on the right.
+    private func twoColumnLayout(_ state: AddAccountState, palette: FinancesColorScheme) -> some View {
+        HStack(alignment: .top, spacing: 24) {
+            previewCard(state, palette: palette)
+                .frame(width: 360)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        formFields(state, palette: palette)
+                    }
+                    .padding(.bottom, 24)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                saveBar(state, palette: palette, maxWidth: AdaptiveLayout.formColumnWidth)
+            }
+            .frame(maxWidth: AdaptiveLayout.formColumnWidth)
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func formFields(_ state: AddAccountState, palette: FinancesColorScheme) -> some View {
+        Picker("Type", selection: typeBinding) {
+            ForEach(state.types, id: \.name) { type in
+                Text(type.title).tag(type)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.top, 16)
+
+        sectionLabel("Name", isError: state.visibleErrors.contains(.name), palette: palette)
+        textField("Salary, Savings, …", text: nameBinding, field: .name, palette: palette)
+            .textInputAutocapitalization(.sentences)
+
+        detailsSection(state, palette: palette)
+    }
+
     // MARK: Preview card
 
     private func previewCard(_ state: AddAccountState, palette: FinancesColorScheme) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                if state.type == .bankaccount, let bank = state.details.bank {
-                    BankBadge(bank: bank, size: 32)
-                } else {
-                    Image(systemName: state.type.systemImage)
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(width: 32, height: 32)
-                        .background(Circle().fill(palette.onPrimary.opacity(0.2)))
-                }
-                Text(state.name.isEmpty ? "Account name" : state.name)
-                    .font(.headline)
-                    .foregroundStyle(palette.onPrimary.opacity(state.name.isEmpty ? 0.6 : 1))
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                if state.type == .bankaccount, !state.details.last4.isEmpty {
-                    Text("•••• \(state.details.last4)")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(palette.onPrimary.opacity(0.85))
-                }
+        AccountCardView(
+            type: state.type,
+            bank: state.details.bank,
+            name: state.name,
+            last4: state.details.last4,
+            amountLabel: "Starting balance",
+            palette: palette
+        ) {
+            FilteredTextField(
+                placeholder: "",
+                prompt: Text("0.00").foregroundStyle(palette.onPrimary.opacity(0.45)),
+                value: amountBinding
+            )
+            .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
+            .keyboardType(.decimalPad)
+            .focused($focus, equals: .amount)
+            .accessibilityLabel("Starting balance")
+            currencyMenu(state, palette: palette)
+        } footer: {
+            if state.visibleErrors.contains(.amount) {
+                Label("Enter an amount", systemImage: "exclamationmark.circle")
+                    .foregroundStyle(palette.errorContainer)
+            } else {
+                Text(state.summary ?? " ")
+                    .foregroundStyle(palette.onPrimary.opacity(0.75))
             }
-            Text("Starting balance")
-                .font(.caption)
-                .foregroundStyle(palette.onPrimary.opacity(0.8))
-                .padding(.top, 18)
-            HStack(alignment: .center) {
-                FilteredTextField(
-                    placeholder: "",
-                    prompt: Text("0.00").foregroundStyle(palette.onPrimary.opacity(0.45)),
-                    value: amountBinding
-                )
-                .font(.system(size: 38, weight: .semibold, design: .rounded).monospacedDigit())
-                .keyboardType(.decimalPad)
-                .focused($focus, equals: .amount)
-                .accessibilityLabel("Starting balance")
-                currencyMenu(state, palette: palette)
-            }
-            Group {
-                if state.visibleErrors.contains(.amount) {
-                    Label("Enter an amount", systemImage: "exclamationmark.circle")
-                        .foregroundStyle(palette.errorContainer)
-                } else {
-                    Text(state.summary ?? " ")
-                        .foregroundStyle(palette.onPrimary.opacity(0.75))
-                }
-            }
-            .font(.footnote)
-            .lineLimit(1)
-            .padding(.top, 2)
         }
-        .foregroundStyle(palette.onPrimary)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(palette.primary))
         .padding(.top, 8)
     }
 
@@ -325,9 +344,14 @@ struct AddAccountView: View {
         }
     }
 
-    private func saveBar(_ state: AddAccountState, palette: FinancesColorScheme) -> some View {
+    private func saveBar(_ state: AddAccountState, palette: FinancesColorScheme, maxWidth: CGFloat) -> some View {
         VStack(spacing: 8) {
-            if let hint = state.hint {
+            if state.saveFailed {
+                Label("Couldn't save the account. Try again.", systemImage: "exclamationmark.circle")
+                    .font(.footnote)
+                    .foregroundStyle(palette.error)
+                    .multilineTextAlignment(.center)
+            } else if let hint = state.hint {
                 Label(hint, systemImage: "info.circle")
                     .font(.footnote)
                     .foregroundStyle(palette.onSurfaceVariant)
@@ -348,7 +372,7 @@ struct AddAccountView: View {
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .frame(maxWidth: 520)
+        .frame(maxWidth: maxWidth)
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
     }
@@ -388,7 +412,7 @@ struct AddAccountView: View {
     }
 }
 
-private extension AccountType {
+extension AccountType {
     var systemImage: String {
         switch self {
         case .bankaccount: "building.columns"
@@ -398,33 +422,54 @@ private extension AccountType {
     }
 }
 
-/// Monogram badge; replace the body with a logo image when real assets are added.
+/// Bank logo in a circle; banks without a logo fall back to a monogram badge.
 struct BankBadge: View {
     let bank: Bank
     var size: CGFloat = 24
 
     var body: some View {
-        let argb = UInt32(truncatingIfNeeded: bank.colorArgb)
-        Text(bank.initials)
-            .font(.system(size: size * 0.4, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: size, height: size)
-            .background(
-                Circle().fill(
-                    Color(
-                        red: Double((argb >> 16) & 0xFF) / 255,
-                        green: Double((argb >> 8) & 0xFF) / 255,
-                        blue: Double(argb & 0xFF) / 255
+        if let logo {
+            Image(logo)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .background(Color.white)
+                .clipShape(Circle())
+                .accessibilityLabel(bank.shortName)
+        } else {
+            let argb = UInt32(truncatingIfNeeded: bank.colorArgb)
+            Text(bank.initials)
+                .font(.system(size: size * 0.4, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(
+                    Circle().fill(
+                        Color(
+                            red: Double((argb >> 16) & 0xFF) / 255,
+                            green: Double((argb >> 8) & 0xFF) / 255,
+                            blue: Double(argb & 0xFF) / 255
+                        )
                     )
                 )
-            )
+        }
+    }
+
+    private var logo: String? {
+        switch bank {
+        case .maib: "Bank_maib"
+        case .victoriabank: "Bank_victoriabank"
+        case .micb: "Bank_micb"
+        case .procredit: "Bank_procredit"
+        case .mobiasbanca: "Bank_mobiasbanca"
+        default: nil
+        }
     }
 }
 
 // MARK: Previews
 
 private func previewModel(_ intents: [AddAccountIntent]) -> AddAccountModel {
-    let model = AddAccountModel(repository: AccountsFactoryKt.createAccountRepository())
+    let model = AddAccountModel(repository: PreviewAccountRepository())
     intents.forEach(model.send)
     return model
 }

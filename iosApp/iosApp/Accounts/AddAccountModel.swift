@@ -9,6 +9,10 @@ struct AddAccountState {
     var name: String = ""
     var amount: String = ""
     var saved: Bool = false
+    /// A save is in progress; a second one must not start.
+    var saving: Bool = false
+    /// The last save could not store the account; cleared by the next edit or save.
+    var saveFailed: Bool = false
 
     var banks: [Bank] = []
     var bankAccountKinds: [BankAccountKind] = []
@@ -27,7 +31,7 @@ struct AddAccountState {
     fileprivate(set) var check = FormCheck(invalid: [])
 
     var visibleErrors: Set<FormField> { check.invalid.intersection(left) }
-    var canSave: Bool { check.canSave }
+    var canSave: Bool { check.canSave && !saving }
     var hint: String? { check.hint }
 
     /// Raw input while the amount is edited, formatted ("2,500.00") otherwise; empty when blank.
@@ -98,6 +102,12 @@ final class AddAccountModel {
 
     func send(_ intent: AddAccountIntent) {
         switch intent {
+        case .saveTapped, .fieldFocusChanged:
+            break
+        default:
+            state.saveFailed = false
+        }
+        switch intent {
         case let .typeSelected(type):
             state.type = type
             state.details = DetailsInput()
@@ -167,17 +177,27 @@ final class AddAccountModel {
 
     private func save() {
         guard state.canSave else { return }
-        let result = addAccount.invoke(
-            type: state.type,
-            name: state.name,
-            currency: state.currency,
-            amount: state.amount,
-            details: state.details.draft
-        )
-        if let invalid = result as? AddAccountResultInvalid {
-            state.left.formUnion(invalid.invalid)
-        } else if result is AddAccountResultCreated {
-            state.saved = true
+        state.saving = true
+        state.saveFailed = false
+        let input = state
+        Task { @MainActor in
+            let result = try? await addAccount.invoke(
+                type: input.type,
+                name: input.name,
+                currency: input.currency,
+                amount: input.amount,
+                details: input.details.draft
+            )
+            state.saving = false
+            if let invalid = result as? AddAccountResultInvalid {
+                state.left.formUnion(invalid.invalid)
+            } else if result is AddAccountResultCreated {
+                state.saved = true
+            } else {
+                // AddAccountResultFailed, or the call itself threw.
+                state.saveFailed = true
+            }
+            refreshCheck()
         }
     }
 }

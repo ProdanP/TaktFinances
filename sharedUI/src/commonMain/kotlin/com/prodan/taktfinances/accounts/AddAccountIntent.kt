@@ -1,12 +1,12 @@
 package com.prodan.taktfinances.accounts
 
-import com.prodan.taktfinances.accounts.domain.AccountType
-import com.prodan.taktfinances.accounts.domain.Bank
-import com.prodan.taktfinances.accounts.domain.BankAccountKind
-import com.prodan.taktfinances.accounts.domain.Currency
-import com.prodan.taktfinances.accounts.domain.FormField
-import com.prodan.taktfinances.accounts.domain.InvestmentKind
-import com.prodan.taktfinances.accounts.domain.LoanDirection
+import com.prodan.taktfinances.accounts.domain.entity.AccountType
+import com.prodan.taktfinances.accounts.domain.entity.Bank
+import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
+import com.prodan.taktfinances.accounts.domain.entity.Currency
+import com.prodan.taktfinances.accounts.domain.entity.FormField
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
+import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 
 sealed interface AddAccountIntent {
     data class TypeSelected(val type: AccountType) : AddAccountIntent
