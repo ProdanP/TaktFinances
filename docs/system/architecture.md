@@ -65,7 +65,7 @@ Compose / SwiftUI  →  domain  ←  data
 - `data` does not import Compose, Android UI, or Swift.
 - Platform APIs stay in `androidMain`, `iosMain`, or `jvmMain` and implement an interface declared in `commonMain`.
 
-`:sharedLogic` is the only place that builds the graph: it starts Koin with the database module and every feature's module. Shells pass in platform ports (a file path, a database driver). They do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Screens and SwiftUI receive already-built domain types through constructors.
+`:sharedLogic` is the only place that builds the graph: it starts Koin with the database module, every feature's module, and the modules a shell passes in (the Android and desktop shells pass `presentationModule` from `:sharedUI`). Shells pass in platform ports (a file path, a database driver). They do not construct repositories themselves, and they do not pass `Context` or Swift types into `domain`. Compose screens get their ViewModels with `koinViewModel()`. SwiftUI receives already-built domain types from `AppDependencies`.
 
 ## Orthogonality
 
@@ -99,9 +99,9 @@ Use these. Skip a pattern that has one call site.
 | Use case | One user action coordinates a rule or several repository calls. |
 | Adapter | A platform API must appear as a `commonMain` port. The source set is the adapter. |
 | Strategy | A rule varies and the composition root should pick the variant. One interface, small implementations. An `if` with two branches is enough otherwise. |
-| Composition root | Starting the graph and resolving from it. That is `:sharedLogic`, not a screen and not a feature's domain. A feature only declares its Koin module. |
+| Composition root | Starting the graph. That is `:sharedLogic`, not a screen and not a feature's domain. Other modules declare Koin modules and may resolve from the running graph. |
 
-Do not resolve dependencies from Koin outside `:sharedLogic`, and do not import Koin in a feature's `domain` or `data`. Do not add a base class per feature. Features share structure by copying the layout above, not by inheriting from a common feature type.
+Any module may use Koin when it needs to: declare a module, or resolve from the graph (for example `koinViewModel()` in a Compose screen). Only `:sharedLogic` calls `startKoin`. A feature's `domain` and `data` packages do not import Koin; its `<Name>Module.kt` does. Do not add a base class per feature. Features share structure by copying the layout above, not by inheriting from a common feature type.
 
 ## Tests
 

@@ -5,18 +5,17 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodan.taktfinances.accounts.components.AccountDetailContent
-import com.prodan.taktfinances.accounts.domain.AccountRepository
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AccountDetailScreen(
     accountId: Long,
     checkInOnOpen: Boolean,
-    repository: AccountRepository,
     onBack: () -> Unit,
-    viewModel: AccountDetailViewModel = viewModel(key = "account-$accountId") {
-        AccountDetailViewModel(accountId, checkInOnOpen, repository)
+    viewModel: AccountDetailViewModel = koinViewModel(key = "account-$accountId") {
+        parametersOf(accountId, checkInOnOpen)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

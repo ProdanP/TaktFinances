@@ -52,6 +52,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            // api: the shells pass presentationModule to the startTaktOn* entries.
+            api(libs.koin.compose.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -5,17 +5,15 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodan.taktfinances.CollectEffects
-import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.home.components.HomeContent
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeScreen(
-    accounts: AccountRepository,
     onNavigateToAddAccount: () -> Unit,
     onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
-    viewModel: HomeViewModel = viewModel { HomeViewModel(accounts) },
+    viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Reload on every start, so returning from Add Account shows (and selects) the new account,

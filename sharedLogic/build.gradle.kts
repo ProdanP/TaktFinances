@@ -51,7 +51,7 @@ kotlin {
             api(project(":feature:onboarding"))
             api(project(":feature:home"))
             api(project(":feature:accounts"))
-            implementation(libs.koin.core)
+            api(libs.koin.core)
             implementation(libs.room3.runtime)
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.kotlinx.coroutinesCore)

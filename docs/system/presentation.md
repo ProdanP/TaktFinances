@@ -10,8 +10,8 @@ Presentation depends on `domain` only.
 
 - A screen, ViewModel, component, UI model, or navigation entry imports `<name>.domain`, `<name>.domain.entity`, `<name>.domain.usecase`, `<name>.domain.error`, and `:core` (`Outcome`, `Reason`). It imports no other feature types.
 - It never imports `<name>.data`, `data.local`, or `data.mapper`, and never sees a Room entity, DAO, HTTP body, or repository implementation.
-- It does not use a feature's Koin module (`accountsModule`) and does not build a repository or use case from `data`. It receives the repository interface or use case through its constructor. The ViewModel may create a use case from the repository interface it was given.
-- `App` is the only exception. It takes `AppDependencies` from `:sharedLogic` (the composition root) and passes the domain interfaces inside it to the navigation entries.
+- It does not use a feature's Koin module (`accountsModule`) and does not build a repository or use case from `data`. The ViewModel receives the repository interface or use case through its constructor. It may create a use case from the repository interface it was given.
+- Koin builds the ViewModels. `presentationModule` in `com.prodan.taktfinances.di` (`:sharedUI`) declares one `viewModel { }` per screen, and the screen takes it with `koinViewModel()`. Route arguments go in with `parametersOf(...)`. A new screen adds its ViewModel to `presentationModule`.
 - iOS follows the same rule. Swift screen models use the domain types exported by `SharedLogic` and nothing else.
 
 ## Android and desktop — MVI ViewModel
@@ -106,7 +106,7 @@ fun onIntent(intent: LandingIntent) {
 @Composable
 fun LandingScreen(
     onNavigateToHome: () -> Unit,
-    viewModel: LandingViewModel = viewModel { LandingViewModel() },
+    viewModel: LandingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     CollectEffects(viewModel.effects) { effect ->

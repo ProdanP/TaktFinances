@@ -20,8 +20,9 @@ internal fun taktModules(database: AppDatabase): List<Module> = listOf(databaseM
  * Builds the dependency graph once per process. A second call (activity recreation, previews)
  * keeps the running graph and does not open [database]. The shells call the platform entries
  * (`startTaktOnAndroid`, `startTaktOnDesktop`, `startTaktOnIos`), so they never see Room.
+ * [extraModules] are modules from outside :sharedLogic, such as the ViewModels in :sharedUI.
  */
-internal fun startTakt(database: () -> AppDatabase) {
+internal fun startTakt(extraModules: List<Module> = emptyList(), database: () -> AppDatabase) {
     if (KoinPlatform.getKoinOrNull() != null) return
-    startKoin { modules(taktModules(database())) }
+    startKoin { modules(taktModules(database()) + extraModules) }
 }

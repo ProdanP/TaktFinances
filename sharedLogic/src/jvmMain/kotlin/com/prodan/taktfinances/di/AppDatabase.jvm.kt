@@ -6,9 +6,11 @@ import com.prodan.taktfinances.database.DATABASE_NAME
 import com.prodan.taktfinances.database.buildApp
 import com.prodan.taktfinances.database.legacyDatabaseFiles
 import java.io.File
+import org.koin.core.module.Module
 
-/** Entry for the desktop shell: opens the app database and starts the dependency graph. */
-fun startTaktOnDesktop() = startTakt { jvmAppDatabase(desktopDataDirectory()) }
+/** Entry for the desktop shell: opens the app database and starts the dependency graph with [extraModules]. */
+fun startTaktOnDesktop(extraModules: List<Module> = emptyList()) =
+    startTakt(extraModules) { jvmAppDatabase(desktopDataDirectory()) }
 
 /** Opens (and on first use creates) the database in [directory], after removing the legacy file. */
 internal fun jvmAppDatabase(directory: File): AppDatabase {

@@ -3,17 +3,14 @@ package com.prodan.taktfinances.accounts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prodan.taktfinances.CollectEffects
 import com.prodan.taktfinances.accounts.components.AddAccountContent
-import com.prodan.taktfinances.accounts.domain.AccountRepository
-import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AddAccountScreen(
-    repository: AccountRepository,
     onClose: () -> Unit,
-    viewModel: AddAccountViewModel = viewModel { AddAccountViewModel(AddAccountUseCase(repository)) },
+    viewModel: AddAccountViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     CollectEffects(viewModel.effects) { effect ->

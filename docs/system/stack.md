@@ -2,7 +2,7 @@
 
 Versions live in `gradle/libs.versions.toml`. This file is the set of allowed choices. Add a library here before adding it to the version catalog. Add the dependency to a module only when a type in that module uses it.
 
-`domain` stays on the Kotlin standard library and `kotlinx-datetime`. Room and Ktor are `data` tools. Koin is a composition-root tool, plus each feature's module file.
+`domain` stays on the Kotlin standard library and `kotlinx-datetime`. Room and Ktor are `data` tools. Koin may be used by any module that needs it; only `:sharedLogic` starts the graph. `domain` and `data` packages stay free of it.
 
 ## In use
 
@@ -35,9 +35,11 @@ Engines: OkHttp on Android, Darwin on iOS, CIO on desktop. Request and response 
 
 ## Dependency injection — Koin
 
-`io.insert-koin:koin-core`. `:sharedLogic` starts the graph and is the only place that resolves from it. Each `:feature:` module depends on it only for its one `<Name>Module.kt` file, which declares bindings. `io.insert-koin:koin-test` checks the module graph in `:sharedLogic` tests.
+`io.insert-koin:koin-core`. `:sharedLogic` starts the graph. Any module may depend on Koin when it needs to declare bindings or resolve from the graph. Each `:feature:` module uses it for its one `<Name>Module.kt` file. `io.insert-koin:koin-test` checks the module graph in `:sharedLogic` tests.
 
-Screens, use cases, repositories, and SwiftUI take constructor arguments. Do not call `get`, `inject`, or `koinInject` from a feature, a composable, or a Swift view.
+`io.insert-koin:koin-compose-viewmodel` in `:sharedUI`: `presentationModule` declares the ViewModels and Compose screens get them with `koinViewModel()`.
+
+Use cases and repositories take constructor arguments. Swift views do not call Koin; they read `AppDependencies`.
 
 Metro and kotlin-inject are not used. Their compile-time contribution across multi-module native targets is still limited, and this app's features are separate modules compiled for iOS.
 
