@@ -16,7 +16,8 @@ iOS screen → one `@Observable` model in `iosApp/iosApp/<Name>/`. It calls doma
 ## Checklist
 
 - [ ] Compose feature package `com.prodan.taktfinances.<name>` has `components/`, `models/` and `navigation/`, plus `<Screen>Screen.kt`, `<Screen>State.kt`, `<Screen>Intent.kt`, `<Screen>ViewModel.kt` and `<Screen>Effect.kt` at its root. Each file holds one type.
-- [ ] Below-screen composables (cards, fields, `<Screen>Content`) are in `components/`. They take values and callbacks, not a ViewModel.
+- [ ] The screen's content (the stateless `<Screen>Content` that lays out the screen from `State`) is a `private` composable in `<Screen>Screen.kt`, not a separate file in `components/`.
+- [ ] Below-screen composables (cards, fields, rows) are in `components/`. They take values and callbacks, not a ViewModel.
 - [ ] Display-ready UI models are in `models/`, mapped from domain with `toUi()`. They hold no Compose types.
 - [ ] Routes and `NavGraphBuilder.<screen>Screen(...)` entries are in `navigation/`. `App` owns the `NavController` and connects features.
 

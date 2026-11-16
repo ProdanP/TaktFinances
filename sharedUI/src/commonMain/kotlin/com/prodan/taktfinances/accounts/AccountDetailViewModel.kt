@@ -39,13 +39,13 @@ class AccountDetailViewModel(
     private val accountId: Long,
     private val checkInOnOpen: Boolean,
     private val repository: AccountRepository,
+    private val checkIn: CheckInUseCase,
+    private val deleteCheckIn: DeleteCheckInUseCase,
     private val today: () -> LocalDate = ::today,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountDetailState())
     val state: StateFlow<AccountDetailState> = _state.asStateFlow()
 
-    private val checkIn = CheckInUseCase(repository)
-    private val deleteCheckIn = DeleteCheckInUseCase(repository)
     private var pendingCheckIn = checkInOnOpen
 
     fun onIntent(intent: AccountDetailIntent) {

@@ -32,7 +32,7 @@ sharedUI/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
     AccountCardModel.kt      # UI models: display-ready values the State holds
   navigation/
     AddAccountNavigation.kt  # route and NavGraphBuilder entry for each screen
-  AddAccountScreen.kt        # screen composable, collects state and effects
+  AddAccountScreen.kt        # screen composable, collects state and effects, plus private AddAccountContent
   AddAccountState.kt         # data class AddAccountState
   AddAccountIntent.kt        # sealed interface AddAccountIntent
   AddAccountViewModel.kt     # class AddAccountViewModel
@@ -41,7 +41,8 @@ sharedUI/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
 
 - The five screen files, `<Screen>Screen.kt`, `<Screen>State.kt`, `<Screen>Intent.kt`, `<Screen>ViewModel.kt` and `<Screen>Effect.kt`, sit directly in the feature package. Each file holds one type with the same name. A feature with two screens has two sets of five.
 - `<Screen>Effect.kt` exists even when the screen has one effect. A screen with no one-off events leaves it out, along with the `effects` flow.
-- `components/` holds this feature's composables below screen level: cards, fields, rows, icons, and the stateless `<Screen>Content`. They take values and callbacks and do not take a ViewModel. A composable two features use goes in the root `com.prodan.taktfinances` package or `theme`, not in a feature's `components`.
+- The screen's content lives in `<Screen>Screen.kt`. The stateless `<Screen>Content`, which lays out the whole screen from `State` and callbacks, is a `private` composable in that file, below `<Screen>Screen`. It is not a separate file and does not go in `components/`.
+- `components/` holds this feature's composables below screen level: cards, fields, rows, icons. They take values and callbacks and do not take a ViewModel. A composable two features use goes in the root `com.prodan.taktfinances` package or `theme`, not in a feature's `components`.
 - `models/` holds UI models: display-ready types that `State` holds when a domain type doesn't fit the screen as is, such as a formatted amount or a label with its color. Mapping from domain to a UI model is a `toUi()` extension function in `models/`. Domain types can go on `State` directly when they need no change. No Compose types (`Color`, `Painter`) go in a model. Keep a plain value such as an ARGB `Long`, and the composable converts it.
 - `navigation/` holds the feature's routes and one `NavGraphBuilder.<screen>Screen(...)` extension per screen that calls `composable(route) { <Screen>Screen(...) }`. Its parameters are the screen's dependencies and navigation callbacks. The shell (`App`) owns the `NavController`, calls these entries inside `NavHost`, and connects one feature's callback to another feature's route. A feature does not navigate to another feature's route by itself.
 - The ViewModel imports from `models` but not from `components` or `navigation`.

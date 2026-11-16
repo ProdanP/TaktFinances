@@ -10,6 +10,8 @@ import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
 import com.prodan.taktfinances.accounts.domain.entity.Period
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
+import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
 import com.prodan.taktfinances.accounts.models.ChartRange
 import com.prodan.taktfinances.theme.ChangeDirection
 import kotlin.test.AfterTest
@@ -55,7 +57,7 @@ class AccountDetailViewModelTest {
     private val repository = FakeAccountRepository()
 
     private fun open(account: SavedAccount, checkIn: Boolean = false): AccountDetailViewModel =
-        AccountDetailViewModel(account.id, checkIn, repository) { today }.also { it.onIntent(AccountDetailIntent.Shown) }
+        AccountDetailViewModel(account.id, checkIn, repository, CheckInUseCase(repository), DeleteCheckInUseCase(repository)) { today }.also { it.onIntent(AccountDetailIntent.Shown) }
 
     private val AccountDetailViewModel.loaded get() = assertIs<AccountDetailContent.Loaded>(state.value.content)
     private val AccountDetailViewModel.sheet get() = assertNotNull(state.value.sheet)
