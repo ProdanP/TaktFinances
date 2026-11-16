@@ -9,7 +9,6 @@ import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
 import com.prodan.taktfinances.home.models.ActivityRow
 import com.prodan.taktfinances.home.models.RecentActivityModel
-import com.prodan.taktfinances.home.domain.HomeDestination
 import com.prodan.taktfinances.home.models.MyFinancesContent
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -145,12 +144,6 @@ class HomeViewModelTest {
     fun addFirstAccountOpensAddAccount() = runTest {
         send(HomeIntent.AddFirstAccountTapped)
         assertEquals(HomeEffect.OpenAddAccount, viewModel.effects.first())
-    }
-
-    @Test
-    fun destinationSelectionStillWorks() {
-        send(HomeIntent.DestinationSelected(HomeDestination.MyFinances))
-        assertEquals(HomeDestination.MyFinances, viewModel.state.value.selected)
     }
 
     @Test

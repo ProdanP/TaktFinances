@@ -7,8 +7,6 @@ import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.accounts.domain.entity.balanceMinor
 import com.prodan.taktfinances.accounts.domain.entity.today
 import com.prodan.taktfinances.core.Outcome
-import com.prodan.taktfinances.home.domain.HomeDestination
-import com.prodan.taktfinances.home.domain.homeDestinations
 import com.prodan.taktfinances.home.models.MyFinancesContent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,12 +23,7 @@ class HomeViewModel(
     private val accounts: AccountRepository,
     private val today: () -> LocalDate = ::today,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(
-        HomeState(
-            destinations = homeDestinations(),
-            selected = HomeDestination.Dashboard,
-        ),
-    )
+    private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
 
     private val _effects = Channel<HomeEffect>(Channel.BUFFERED)
@@ -41,7 +34,6 @@ class HomeViewModel(
 
     fun onIntent(intent: HomeIntent) {
         when (intent) {
-            is HomeIntent.DestinationSelected -> _state.update { it.copy(selected = intent.destination) }
             HomeIntent.AddAccountTapped, HomeIntent.AddFirstAccountTapped -> _effects.trySend(HomeEffect.OpenAddAccount)
             HomeIntent.Shown, HomeIntent.RetryTapped -> reload()
             is HomeIntent.AccountSelected -> select { accounts -> accounts.firstOrNull { it.id == intent.id } }

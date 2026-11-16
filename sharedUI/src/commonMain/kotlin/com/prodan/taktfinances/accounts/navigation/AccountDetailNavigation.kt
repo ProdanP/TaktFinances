@@ -1,35 +1,24 @@
 package com.prodan.taktfinances.accounts.navigation
 
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavKey
 import com.prodan.taktfinances.accounts.AccountDetailScreen
-import androidx.savedstate.read
+import kotlinx.serialization.Serializable
 
-private const val ID = "id"
-private const val CHECK_IN = "checkIn"
+/** Account Detail for [id]; [checkIn] opens the check-in sheet for the current month. */
+@Serializable
+data class AccountDetailRoute(val id: Long, val checkIn: Boolean = false) : NavKey
 
-const val AccountDetailRoute = "account/{$ID}?$CHECK_IN={$CHECK_IN}"
-
-/** Route to Account Detail for [id]; [checkIn] opens the check-in sheet for the current month. */
-fun accountDetailRoute(id: Long, checkIn: Boolean = false): String = "account/$id?$CHECK_IN=$checkIn"
-
-fun NavGraphBuilder.accountDetailScreen(onBack: () -> Unit) {
-    composable(
-        route = AccountDetailRoute,
-        arguments = listOf(
-            navArgument(ID) { type = NavType.LongType },
-            navArgument(CHECK_IN) {
-                type = NavType.BoolType
-                defaultValue = false
-            },
-        ),
-    ) { entry ->
-        val arguments = entry.arguments
+/** The detail pane of My Finances' list-detail layout; [showBack] is false while the list is beside it. */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+fun EntryProviderScope<NavKey>.accountDetailEntry(showBack: Boolean, onBack: () -> Unit) {
+    entry<AccountDetailRoute>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
         AccountDetailScreen(
-            accountId = arguments?.read { getLong(ID) } ?: 0,
-            checkInOnOpen = arguments?.read { getBoolean(CHECK_IN) } ?: false,
+            accountId = route.id,
+            checkInOnOpen = route.checkIn,
+            showBack = showBack,
             onBack = onBack,
         )
     }

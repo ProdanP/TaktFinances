@@ -1,13 +1,15 @@
 package com.prodan.taktfinances.accounts.navigation
 
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavKey
 import com.prodan.taktfinances.accounts.AddAccountScreen
+import kotlinx.serialization.Serializable
 
-const val AddAccountRoute = "add-account"
+@Serializable
+data object AddAccountRoute : NavKey
 
-fun NavGraphBuilder.addAccountScreen(onClose: () -> Unit) {
-    composable(AddAccountRoute) {
+fun EntryProviderScope<NavKey>.addAccountEntry(onClose: () -> Unit) {
+    entry<AddAccountRoute> {
         AddAccountScreen(onClose = onClose)
     }
 }

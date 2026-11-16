@@ -75,6 +75,7 @@ import org.koin.core.parameter.parametersOf
 fun AccountDetailScreen(
     accountId: Long,
     checkInOnOpen: Boolean,
+    showBack: Boolean,
     onBack: () -> Unit,
     viewModel: AccountDetailViewModel = koinViewModel(key = "account-$accountId") {
         parametersOf(accountId, checkInOnOpen)
@@ -82,7 +83,7 @@ fun AccountDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onIntent(AccountDetailIntent.Shown) }
-    AccountDetailContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
+    AccountDetailContent(state = state, onIntent = viewModel::onIntent, showBack = showBack, onBack = onBack)
 }
 
 internal const val DETAIL_LOAD_FAILED_MESSAGE = "Couldn't load this account"
@@ -90,7 +91,12 @@ internal const val DETAIL_LOAD_FAILED_MESSAGE = "Couldn't load this account"
 /** Account Detail: one scrolling column, or header and chart beside the timeline when two panes fit. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountDetailContent(state: AccountDetailState, onIntent: (AccountDetailIntent) -> Unit, onBack: () -> Unit) {
+private fun AccountDetailContent(
+    state: AccountDetailState,
+    onIntent: (AccountDetailIntent) -> Unit,
+    showBack: Boolean,
+    onBack: () -> Unit,
+) {
     val loaded = state.content as? AccountDetailContent.Loaded
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -98,7 +104,10 @@ private fun AccountDetailContent(state: AccountDetailState, onIntent: (AccountDe
             TopAppBar(
                 title = { Text(loaded?.header?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    // Beside My Finances the list is the way back, so there is no back arrow.
+                    if (showBack) {
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
