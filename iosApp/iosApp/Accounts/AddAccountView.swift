@@ -422,26 +422,47 @@ extension AccountType {
     }
 }
 
-/// Monogram badge; replace the body with a logo image when real assets are added.
+/// Bank logo in a circle; banks without a logo fall back to a monogram badge.
 struct BankBadge: View {
     let bank: Bank
     var size: CGFloat = 24
 
     var body: some View {
-        let argb = UInt32(truncatingIfNeeded: bank.colorArgb)
-        Text(bank.initials)
-            .font(.system(size: size * 0.4, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: size, height: size)
-            .background(
-                Circle().fill(
-                    Color(
-                        red: Double((argb >> 16) & 0xFF) / 255,
-                        green: Double((argb >> 8) & 0xFF) / 255,
-                        blue: Double(argb & 0xFF) / 255
+        if let logo {
+            Image(logo)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .background(Color.white)
+                .clipShape(Circle())
+                .accessibilityLabel(bank.shortName)
+        } else {
+            let argb = UInt32(truncatingIfNeeded: bank.colorArgb)
+            Text(bank.initials)
+                .font(.system(size: size * 0.4, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(
+                    Circle().fill(
+                        Color(
+                            red: Double((argb >> 16) & 0xFF) / 255,
+                            green: Double((argb >> 8) & 0xFF) / 255,
+                            blue: Double(argb & 0xFF) / 255
+                        )
                     )
                 )
-            )
+        }
+    }
+
+    private var logo: String? {
+        switch bank {
+        case .maib: "Bank_maib"
+        case .victoriabank: "Bank_victoriabank"
+        case .micb: "Bank_micb"
+        case .procredit: "Bank_procredit"
+        case .mobiasbanca: "Bank_mobiasbanca"
+        default: nil
+        }
     }
 }
 
