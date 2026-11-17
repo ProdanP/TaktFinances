@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Status | Draft v0.1, open for review |
-| Last updated | 2026-11-16 |
+| Last updated | 2026-11-17 |
 | Scope | Version 1 (v1) and the Phase 2 backlog |
 | Platforms | Android, iOS, desktop (Windows, macOS, Linux) |
 
@@ -49,7 +49,7 @@ Primary market: Moldova (MDL is the default currency, local banks are listed, of
 | # | Decision |
 |---|---|
 | D1 | Every Bank and Loan account has a **tracking mode**: **Transactions** or **Monthly**. Investment accounts are always tracked by trades (D16). |
-| D2 | Switching an account's mode **freezes the past history as read-only**; the new mode starts on the day of the switch, from the account's current balance. |
+| D2 | ~~Switching an account's mode freezes the past history as read-only.~~ **Withdrawn**, replaced by D25. |
 | D3 | **Monthly** is the default tracking mode for new Bank and Loan accounts. |
 | D4 | **Gain/loss means net change only**: balance at the end of a period minus balance at the end of the previous period. No contributions or performance split. |
 | D5 | The user picks a **Main Currency** in Settings (MDL by default). All combined values are shown in it. |
@@ -65,13 +65,14 @@ Primary market: Moldova (MDL is the default currency, local banks are listed, of
 | D15 | Investment accounts track **holdings only**, not the cash held at the broker. |
 | D16 | Investment accounts are **always tracked by trades** (Transactions mode). They have no Monthly mode and no mode switch. |
 | D17 | Entries can't be dated **before the account was created** (monthly entries from the creation month onward). |
-| D18 | When an account's mode is switched twice on the same day, the period that lasted less than a day is **discarded**. |
+| D18 | ~~When an account's mode is switched twice on the same day, the shorter period is discarded.~~ **Withdrawn**, no longer applies (D25). |
 | D19 | Combined totals are shown **only on the Dashboard**, not on My Finances. |
 | D20 | v1 is in **English only**. |
 | D21 | The platform's **automatic device backup** (Android Auto Backup, iCloud device backup) stays enabled for the app's data. |
 | D22 | The app opens on **Dashboard**, or on My Finances while there are no accounts. |
 | D23 | A trade has an optional **fee**. It is shown on the trade and summed per account, but doesn't change the holdings value (no cash is tracked, D15). |
 | D24 | **No data migration**: v1 starts with a fresh database; accounts saved by development builds are not kept. |
+| D25 | The tracking mode is chosen **only when the account is created** and **can't be changed afterwards**. There is no mode switch. To track an account differently, the user deletes it and creates a new one. |
 
 ---
 
@@ -81,16 +82,14 @@ Primary market: Moldova (MDL is the default currency, local banks are listed, of
 |---|---|
 | **Account** | Something that holds or owes money: a bank account, an investment, or a loan. Has a name, a type, a currency, type-specific details and a tracking mode. |
 | **Account type** | Bank, Investment or Loan. Decides which details and which Account Detail block are shown. |
-| **Tracking mode** | How the account's balance is kept up to date: **Transactions** or **Monthly** (D1). |
+| **Tracking mode** | How the account's balance is kept up to date: **Transactions** or **Monthly** (D1). Chosen when the account is created and fixed from then on (D25). |
 | **Transaction** | A single entry in a Transactions-mode account. Its shape depends on the type: a Bank transaction (amount, In/Out, category), a Loan repayment or additional amount, or an Investment trade. |
 | **Trade** | A Buy or Sell of an instrument in an Investment account: instrument, quantity, price per unit, date. |
 | **Instrument** | What is bought or sold in an investment, named by the user, e.g. "VWCE" or "Bitcoin". |
 | **Holding** | The quantity of one instrument currently held in an Investment account, together with its latest price. |
 | **Price update** | A price for an instrument that the user entered on a date without trading, so the holding's value stays current. |
 | **Monthly entry** | The balance of a Monthly-mode account for one calendar month, e.g. "November 2026: 11,500.00". |
-| **Opening balance** | The balance a Transactions-mode period starts from. |
-| **Period** | A stretch of an account's history kept in one tracking mode. An account has one active period and zero or more **frozen periods** (D2). |
-| **Frozen period** | A past period from before a mode switch. Read-only. |
+| **Opening balance** | The balance a Transactions-mode account starts from, dated on its creation date. |
 | **Month-end balance** | An account's balance on the last day of a month. Derived the same way for both modes (§9.4); it is what the Dashboard and all charts use. |
 | **Main Currency** | The currency combined values are shown in (D5). |
 | **Net worth** | Bank + Investment + Lent loans − Borrowed loans, all converted to the Main Currency. |
@@ -114,7 +113,7 @@ Primary market: Moldova (MDL is the default currency, local banks are listed, of
 |---|---|
 | Onboarding | 4 steps (D8) |
 | Home | Three tabs: Dashboard, My Finances, Settings (renamed from Profile, D12) |
-| Accounts | Add (already built), view, edit, delete, tracking mode choice and switch |
+| Accounts | Add (already built), view, edit, delete, tracking mode choice at creation (fixed afterwards, D25) |
 | Monthly mode | Monthly check-in, edit past months, carry-forward for missing months |
 | Transactions mode | Bank: transactions with fixed categories. Loan: repayments and additional amounts. Investment: trades, holdings, price updates |
 | Account Detail | Header, chart, timeline, type-specific block (D10) |
@@ -157,7 +156,6 @@ First launch only
 |  +-------------+   |    - Monthly check-in        |                             |
 |                    |    - Log transaction         |                             |
 |                    |    - Edit / Delete account   |                             |
-|                    |    - Switch tracking mode    |                             |
 |                    |  Add Account                 |                             |
 |                    +------------------------------+                             |
 +---------------------------------------------------------------------------------+
@@ -183,7 +181,6 @@ Each journey lists the trigger, the main steps, and the expected result. Accepta
 | J2 | Monthly check-in | Opens a Monthly-mode account | Taps "Check in", enters this month's balance (or "Same as last month"); saves | Monthly entry saved; balance, change and charts update |
 | J3 | Log a transaction | Opens a Transactions-mode account | Taps "Add transaction" (Bank: amount, In/Out, category; Loan: repayment or additional amount; Investment: a Buy/Sell trade); saves | Balance or value and charts update |
 | J3b | Update investment prices | Opens a Investment account | Taps "Update prices", edits the latest price of any holding; saves | Holdings and account value update |
-| J4 | Switch tracking mode (Bank, Loan) | Account Detail, tracking mode toggle | Picks the other mode, confirms | Old history frozen; new mode starts today from the current balance |
 | J5 | Review an account | Taps a card on My Finances | Sees header, chart, timeline, type block | Understands the account's state and trend |
 | J6 | Edit or delete an account | Account Detail menu | Edits allowed fields and saves, or deletes after confirming | Account updated, or removed with all its history |
 | J7 | Review net worth | Opens Dashboard | Reads net worth, monthly change, chart, allocation, top movers | Knows whether total money went up or down |
@@ -216,7 +213,7 @@ Shows MDL, USD, EUR, GBP and RON as single-select options, with MDL preselected,
 Shows two explanatory cards, nothing to choose:
 - **Monthly** (labelled "Recommended"): "Enter your balance once a month. Quick and simple."
 - **Transactions**: "Log every payment and income. See where money goes."
-And: "You choose per account, and you can switch later. Investments are always tracked by trades." Plus a **Continue** button.
+And: "You choose per account when you add it. It can't be changed later. Investments are always tracked by trades." Plus a **Continue** button.
 - WHEN the user taps Continue, THEN step 4 is shown.
 
 ### FR-ON-5 Step 4: Add your first account
@@ -244,6 +241,8 @@ For Investment, the tracking choice is hidden and replaced by the line "Investme
 - WHEN the Add Account screen opens, THEN Monthly is selected.
 - WHEN the user switches account type, THEN the tracking choice is kept.
 - WHEN the user saves, THEN the account is created with the selected mode.
+- The hint under the choice also says "You can't change this later" (D25).
+- Once the account is saved, its tracking mode can't be changed anywhere in the app (D25).
 
 #### FR-AC-2 Meaning of the amount
 The amount label depends on the tracking mode:
@@ -279,7 +278,7 @@ Baseline: the card swiper, page indicator, empty state, load failure and adaptiv
 My Finances shows no combined total; combined values live only on the Dashboard (D19).
 
 #### FR-MF-3 Recent activity shows real entries
-The "Recent activity" area below the selected card shows the latest 5 entries of the account's active period: transactions for Transactions mode, monthly entries for Monthly mode, newest first, plus a **See all** action that opens Account Detail.
+The "Recent activity" area below the selected card shows the latest 5 entries of the account: transactions for Transactions mode, monthly entries for Monthly mode, newest first, plus a **See all** action that opens Account Detail.
 - WHEN the selected account has no entries besides its starting balance, THEN the area shows "No transactions yet" (Transactions), "No trades yet" (Investment) or "No check-ins yet" (Monthly) with the matching action button.
 
 #### FR-MF-4 Open Account Detail
@@ -299,7 +298,7 @@ Account Detail offers **Edit**, which opens the Add Account form filled with the
 | Type | Only while the account has no entries besides its starting balance |
 | Currency | Only while the account has no entries besides its starting balance |
 | Amount | Not on this form; balances change through check-ins or transactions |
-| Tracking mode | Not on this form; changed with the mode switch (§9.3) |
+| Tracking mode | Never. Shown read-only; it is fixed when the account is created (D25) |
 
 - WHEN the account has entries and the user opens Edit, THEN type and currency are shown read-only with the hint "Can't be changed once the account has history".
 - WHEN the user saves valid changes, THEN Account Detail shows the updated values.
@@ -319,7 +318,7 @@ Account Detail offers **Edit**, which opens the Add Account form filled with the
 
 #### FR-MO-1 Check in for a month
 Account Detail of a Monthly account shows a **Check in** action. It opens a sheet with:
-- the month (current month by default; can be changed to any earlier month of the active period, never a future one and never before the month the account was created, D17)
+- the month (current month by default; can be changed to any earlier month, never a future one and never before the month the account was created, D17)
 - the balance amount (same input rules as the Add Account amount)
 - the previous month's balance as a hint, e.g. "October: 10,000.00"
 - a **Same as last month** shortcut that fills in the previous month's balance
@@ -328,14 +327,13 @@ Acceptance:
 - WHEN the account's latest entry is October 2026 with 10,000.00 and the user checks in for November with 11,500.00, THEN November 2026: 11,500.00 is saved, the balance shows 11,500.00 and the change for November shows +1,500.00 (+15.0%).
 - WHEN the user taps Same as last month, THEN the amount is filled with October's balance and can still be edited.
 - WHEN the user picks a month that already has an entry, THEN the sheet shows that entry's amount and saving replaces it (one entry per month; the last save wins).
-- WHEN the user tries to pick a month after the current month, or before the active period's start month, THEN it isn't offered.
+- WHEN the user tries to pick a month after the current month, or before the month the account was created, THEN it isn't offered.
 - Save is enabled only when the amount holds a number.
 
 #### FR-MO-2 Edit and delete monthly entries
-- WHEN the user taps a monthly entry in the active period, THEN the check-in sheet opens for that month with its amount.
+- WHEN the user taps a monthly entry, THEN the check-in sheet opens for that month with its amount.
 - WHEN the user deletes a monthly entry, THEN a confirmation is shown, and after confirming the entry is removed and later months' changes are recalculated.
-- The month the period started in (its starting balance) can be edited but not deleted.
-- Entries in a frozen period can't be edited or deleted.
+- The account's first month (its starting balance) can be edited but not deleted.
 
 #### FR-MO-3 Missing months
 - WHEN a month between two entries (or between the latest entry and the current month) has no entry, THEN its month-end balance is the previous entry's balance (carry-forward), and the timeline shows the month with a muted "Not checked in" label and a **Check in** shortcut.
@@ -356,7 +354,7 @@ Account Detail of a Transactions-mode Bank account shows an **Add transaction** 
 | Amount | Required; > 0; same input rules as the Add Account amount; no sign is typed |
 | Direction | **Out** / **In** toggle; Out selected by default |
 | Category | Required; from the list for the chosen direction (§9.2.1) |
-| Date | Today by default; no future dates; not before the active period's start date |
+| Date | Today by default; no future dates; not before the account's creation date |
 | Note | Optional; up to 200 characters |
 
 - WHEN the user enters 420.00, Out, Groceries, today, and saves, THEN the balance drops by 420.00 and the transaction is first in the timeline.
@@ -373,15 +371,14 @@ Account Detail of a Transactions-mode Bank account shows an **Add transaction** 
 Categories apply to Bank accounts only. Each category has an icon. The lists are fixed in v1.
 
 #### FR-TX-2 Balance rules
-- Bank: balance = opening balance + sum of In − sum of Out in the active period. It may go below 0 (overdraft) and is then shown with a `−` sign.
+- Bank: balance = opening balance + sum of In − sum of Out. It may go below 0 (overdraft) and is then shown with a `−` sign.
 - Loan: balance = opening balance − Repayments + Additional amounts.
 - Investment: the value comes from holdings (§9.2.2).
 - A Loan's balance may not go below 0: WHEN a repayment is larger than the remaining balance, THEN Save is disabled with "More than the remaining amount".
 
 #### FR-TX-3 Edit and delete transactions
-- WHEN the user taps a transaction in the active period, THEN the form opens with its values; saving replaces it and the balance is recalculated.
+- WHEN the user taps a transaction, THEN the form opens with its values; saving replaces it and the balance is recalculated.
 - WHEN the user deletes a transaction, THEN a confirmation is shown, and after confirming it is removed and the balance is recalculated.
-- Transactions in a frozen period can be opened read-only and can't be edited or deleted.
 
 #### FR-TX-4 Transaction timeline
 Transactions are listed newest first, grouped by day with a day header ("Today", "Yesterday", "14 Nov"). Each row shows the category icon, category, note (if any), and the signed amount.
@@ -434,7 +431,6 @@ The form shows the trade total (quantity x price, rounded to 2 decimals) as the 
 
 ##### FR-IN-6 Starting holdings
 - A new Investment account starts with no holdings and a value of 0.00 (FR-AC-2). Positions bought before the account was created are entered as Buy trades dated on the creation date (D17), at the price paid or at today's price.
-- Investment accounts have no mode switch, so there is no switch-day starting point to handle (D16).
 
 ##### FR-IN-7 Fees (D23)
 - WHEN a trade has a fee, THEN its timeline row shows it, e.g. "Buy 10 VWCE @ 110.50 · fee 2.00".
@@ -446,41 +442,21 @@ The form shows the trade total (quantity x price, rounded to 2 decimals) as the 
 - A Loan transaction is either a **Repayment** (lowers the balance) or an **Additional amount** (raises it), with amount (> 0), date (same rules as FR-TX-1) and an optional note. Loans have no categories.
 - The balance never goes below 0 (FR-TX-2). Mark as repaid (FR-AD-9) adds a Repayment.
 
-### 9.3 Switching tracking mode (J4)
+### 9.3 Tracking mode is fixed (D25)
 
-#### FR-SW-1 The switch
-For Bank and Loan accounts, Account Detail shows the account's tracking mode as a two-option control (**Monthly** | **Transactions**). Choosing the other option asks for confirmation:
-
-> Switch "Salary" to Transactions?
-> Your past entries will be kept but can't be edited. Tracking starts today from 12,340.00 MDL.
-> [Switch] [Cancel]
-
-- WHEN the user confirms, THEN the active period ends today and becomes a frozen period, and a new active period in the other mode starts today with the current balance as its starting point (D2).
-- WHEN the user cancels, THEN nothing changes.
-
-#### FR-SW-2 Monthly → Transactions
-- WHEN a Monthly account with November 2026: 12,340.00 is switched on 16 Nov 2026, THEN a Transactions period starts with opening balance 12,340.00 on 16 Nov 2026, and all monthly entries become read-only.
-
-#### FR-SW-3 Transactions → Monthly
-- WHEN a Transactions account with balance 12,340.00 is switched on 16 Nov 2026, THEN a Monthly period starts with the entry November 2026: 12,340.00, which stays editable, and all transactions become read-only.
-
-#### FR-SW-4 Timeline across periods
-- The timeline shows the active period first, then each frozen period under a divider, e.g. "Monthly until 16 Nov 2026 · read-only".
-- Charts and month-end balances run continuously across periods.
-
-#### FR-SW-5 Switching more than once
-- WHEN an account is switched again later, THEN another frozen period is added; there is no limit.
-- WHEN an account is switched twice on the same day, THEN the period that lasted less than a day is discarded, leaving the account as if only the last switch happened (D18).
+#### FR-TM-1 No mode switch
+- An account keeps the tracking mode it was created with for its whole life.
+- Account Detail shows the mode as a read-only label ("Tracking: Monthly" or "Tracking: Transactions"); Investment accounts show "Tracking: Trades". It is not a control.
+- WHEN the user wants to track an account in the other mode, THEN they delete it (§8.4) and create a new account with the other mode.
 
 ### 9.4 Month-end balance (used by charts and the Dashboard)
 
 For each account and each month from its first month to the current month:
 
-- **Monthly period:** the month's entry, or the carried-forward previous entry if the month is missing.
-- **Transactions period:** opening balance plus all transactions dated on or before the last day of the month.
-- **Investment, Transactions period:** for each instrument, the quantity held at the end of the month x its latest price on or before the last day of the month.
+- **Monthly account:** the month's entry, or the carried-forward previous entry if the month is missing.
+- **Transactions account (Bank, Loan):** opening balance plus all transactions dated on or before the last day of the month.
+- **Investment account:** for each instrument, the quantity held at the end of the month x its latest price on or before the last day of the month.
 - **Current month:** the current balance ("so far this month").
-- **Month containing a switch:** the value from the period that was active on the last day of the month (for the current month, the active period).
 - Months before an account's first month don't count it (it adds 0 to totals, and its own chart starts at its first month).
 
 ---
@@ -498,12 +474,12 @@ For each account and each month from its first month to the current month:
 |                                                  |
 |    [ balance chart:  6M | 1Y | All ]             |
 |                                                  |
-|    Tracking:  ( Monthly | Transactions )         |
+|    Tracking: Monthly              (read-only)    |
 |                                                  |
 |    [ type-specific block ]                       |
 |                                                  |
 |    [ Check in ]  or  [ Add transaction ]         |
-|    timeline (active period, then frozen periods) |
+|    timeline                                      |
 +--------------------------------------------------+
 ```
 
@@ -688,27 +664,24 @@ Phase 2 adds Backup & restore, Export CSV, Month-end reminder, App lock, and Era
 ```
 Account
   id, name, type (Bank|Investment|Loan), currency, createdAt
+  mode (Monthly|Transactions)  set at creation, never changes (D25)
+  openingBalanceMinor?         (Transactions-mode Bank and Loan accounts, dated createdAt)
   details: BankDetails(bank, kind, last4?, interestRate?, maturityDate?)
          | InvestmentDetails(kind, platform)
          | LoanDetails(direction, counterparty, originalAmount?, dueDate?)
-  periods: [Period]            (exactly one active)
 
-Period
-  id, accountId, mode (Monthly|Transactions), startDate, endDate? (null = active)
-  startingBalance
+MonthlyEntry                   (Monthly accounts)
+  accountId, month (YYYY-MM), amountMinor       unique per (accountId, month)
 
-MonthlyEntry                   (Monthly periods)
-  periodId, month (YYYY-MM), amountMinor        unique per (periodId, month)
-
-Transaction                    (Transactions periods of Bank and Loan accounts)
-  id, periodId, amountMinor (> 0), direction (In|Out), category? (Bank only), date, note?
+Transaction                    (Transactions-mode Bank and Loan accounts)
+  id, accountId, amountMinor (> 0), direction (In|Out), category? (Bank only), date, note?
   (Loan: Repayment = Out, Additional amount = In)
 
-Trade                          (Transactions periods of Investment accounts)
-  id, periodId, side (Buy|Sell), instrument, quantity (8 decimals), unitPrice (6 decimals), date, note?
+Trade                          (Investment accounts)
+  id, accountId, side (Buy|Sell), instrument, quantity (8 decimals), unitPrice (6 decimals), date, note?
 
-PriceUpdate                    (Transactions periods of Investment accounts)
-  periodId, instrument, date, unitPrice          unique per (periodId, instrument, date)
+PriceUpdate                    (Investment accounts)
+  accountId, instrument, date, unitPrice         unique per (accountId, instrument, date)
 
 ExchangeRate
   currency, date, rateToMdl
@@ -728,10 +701,9 @@ Each slice is a separate OpenSpec change, delivered in order.
 | Slice | Content | Depends on |
 |---|---|---|
 | S0 | Finish `persist-accounts-and-card-swiper` | — |
-| S1 | Tracking mode on Add Account, periods, Monthly check-in, Account Detail (header, chart, monthly timeline), edit and delete account | S0 |
+| S1 | Tracking mode on Add Account, Monthly check-in, Account Detail (header, chart, monthly timeline), edit and delete account | S0 |
 | S2 | Transactions mode: add/edit/delete transactions, categories, transaction timeline, read-only monthly summary, spending by category | S1 |
 | S2b | Investment trades, holdings and price updates; loan repayments | S2 |
-| S3 | Mode switching with frozen periods (Bank and Loan only) | S1, S2 |
 | S4 | BNM rates, Main Currency setting, equivalents on cards | S0 |
 | S5 | Dashboard | S1, S4 (S2 optional) |
 | S6 | Type-specific blocks and new optional detail fields, Mark as repaid | S1 (S2 for In vs Out) |
@@ -746,7 +718,7 @@ Each slice is a separate OpenSpec change, delivered in order.
 | R1 | **Data loss**: no backup in v1 (D11); a lost, reset or replaced device loses all data. | Accepted for v1. The platform's automatic backup stays on (D21), which covers Android and iOS when the user has it enabled; desktop has no equivalent. Backup is the first Phase 2 item. |
 | R2 | BNM may change its rate format or be unreachable. | Rates are cached; failures fall back to stored rates; the parser is isolated so it can be fixed quickly. |
 | R3 | With net change only (D4), deposits look like gains, and exchange rate moves show as gains or losses. | The Dashboard labels it "change", not "profit". Contributions/performance is in Phase 2. |
-| R4 | Users may not understand frozen periods after switching modes. | Clear confirmation text, a visible divider with the switch date, read-only styling. |
+| R4 | A user who picks the wrong tracking mode can't change it (D25); deleting and recreating the account loses its history. | Onboarding and the Add Account hint say the choice is final; Monthly is the safe default (D3). |
 | R5 | Carry-forward makes a forgotten check-in look like "no change". | "Not checked in" label on missing months. The Phase 2 reminder addresses the root cause. |
 | A1 | Users hold at most a few dozen accounts. | Card swiper and Dashboard lists are sized for this. |
 | A2 | Only the five listed currencies are needed in v1. | The currency list is data, so more can be added later. |
@@ -763,7 +735,7 @@ Each slice is a separate OpenSpec change, delivered in order.
 | Q1 | Rename the Profile tab to Settings? | Yes (D12). |
 | Q2 | What is a Loan transaction? What is an Investment transaction? | Loans: Repayment / Additional amount (D13). Investments: trades with holdings valued at manually entered prices (D14), holdings only (D15), always tracked by trades (D16). |
 | Q3 | How far back can monthly entries go? | Only back to the month the account was created (D17). |
-| Q4 | Two mode switches on the same day? | The short period is discarded (D18). |
+| Q4 | Two mode switches on the same day? | No longer applies: the mode can't be switched (D25). |
 | Q5 | Combined total on My Finances? | No, Dashboard only (D19). |
 | Q6 | Languages in v1? | English only (D20). |
 | Q7 | Keep the platform's automatic backup? | Yes (D21). |
@@ -772,6 +744,7 @@ Each slice is a separate OpenSpec change, delivered in order.
 | Q10 | Fees on trades? | Optional fee field, informational only (D23). |
 | Q11 | Past history before account creation? | Not in v1; history builds from the creation month (D17). |
 | Q12 | Migrating accounts saved by today's app? | No migration; fresh database (D24). |
+| Q13 | Can the tracking mode be changed after the account is created? | No; it is chosen only at creation (D25). |
 
 ### 18.2 Open
 
