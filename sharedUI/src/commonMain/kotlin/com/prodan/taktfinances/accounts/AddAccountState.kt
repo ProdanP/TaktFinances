@@ -20,7 +20,7 @@ import com.prodan.taktfinances.accounts.domain.entity.hasAmount
 import com.prodan.taktfinances.accounts.domain.entity.investmentKinds
 import com.prodan.taktfinances.accounts.domain.entity.loanDirections
 
-data class AddAccountState(
+internal data class AddAccountState(
     val types: List<AccountType> = accountTypes(),
     val currencies: List<Currency> = currencies(),
     val banks: List<Bank> = banks(),
@@ -43,7 +43,8 @@ data class AddAccountState(
     /** The last save could not store the account; cleared by the next edit or save. */
     val saveFailed: Boolean = false,
 ) {
-    val check: FormCheck get() = checkAccountForm(type, name, amount, details)
+    /** Computed once per state, not on every read of the getters below. */
+    val check: FormCheck = checkAccountForm(type, name, amount, details)
     val visibleErrors: Set<FormField> get() = check.invalid intersect left
     val canSave: Boolean get() = check.canSave && !saving
     val hint: String? get() = check.hint

@@ -9,13 +9,14 @@ Versions live in `gradle/libs.versions.toml`. This file is the set of allowed ch
 - Kotlin Multiplatform for Android, iOS (`iosArm64`, `iosSimulatorArm64`), and desktop (JVM 11).
 - Compose Multiplatform and Material 3 for Android and desktop UI.
 - Compose Material Icons Extended (`org.jetbrains.compose.material:material-icons-extended`, 1.7.3) for navigation and screen icons on Android and desktop.
-- Material 3 window size class (`org.jetbrains.compose.material3:material3-window-size-class`) for `WindowWidthSizeClass` on Android and desktop.
+- Material 3 adaptive (`org.jetbrains.compose.material3.adaptive:adaptive-navigation3` and `org.jetbrains.compose.material3:material3-adaptive-navigation-suite`) for the list-detail scene and the navigation bar, rail or drawer on Android and desktop. Inside a screen, `widthClass(maxWidth)` in `:sharedUI` picks Compact, Medium or Wide from the space the screen gets.
 - SwiftUI for iOS UI. The iOS app imports the `SharedLogic` framework. Charts on iOS use Swift Charts (system framework); Android and desktop draw charts with Compose `Canvas`, with no chart library.
 - kotlinx-datetime (`org.jetbrains.kotlinx:kotlinx-datetime`) for calendar dates (`LocalDate`), months (`YearMonth`) and today's date in the device time zone. It is the one library `domain` may use besides the standard library and `:core`; `:feature:accounts` exposes it with `api`, so `SharedLogic` exports its types to Swift.
 - AndroidX Activity Compose for the Android entry. AndroidX Lifecycle ViewModel and Runtime Compose for Compose state holders.
 - kotlinx.coroutines, including the Swing dispatcher on desktop. `kotlinx-coroutines-core` is a `data` dependency of a feature that moves blocking work off the caller's thread.
 - kotlinx-coroutines-test for coroutine and Flow tests in `commonTest`.
 - kotlin-test, JUnit, and AndroidX test (Espresso) for tests.
+- Compose UI test (`org.jetbrains.compose.ui:ui-test`) for screen tests in `:sharedUI` `jvmTest`. They run on desktop, so they need no device or Robolectric.
 
 ## Persistence — Room
 
@@ -45,6 +46,6 @@ Metro and kotlin-inject are not used. Their compile-time contribution across mul
 
 ## Navigation
 
-Android and desktop use Navigation Compose, `org.jetbrains.androidx.navigation:navigation-compose`, in `:sharedUI`. iOS uses SwiftUI `NavigationStack` in `iosApp`.
+Android and desktop use Navigation 3, `org.jetbrains.androidx.navigation3:navigation3-ui`, in `:sharedUI`, with `lifecycle-viewmodel-navigation3` so each entry gets its own ViewModel store. The back stack is a `NavBackStack` from `rememberNavBackStack`, so it survives process death. iOS uses SwiftUI `NavigationStack` in `iosApp`.
 
 The shell owns the routes. A feature does not navigate into another feature. Voyager and Decompose are not used: iOS screens stay SwiftUI, so there is no shared navigator.

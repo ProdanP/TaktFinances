@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
 /** [today] dates the new account; tests pass a fixed date. */
-class AddAccountViewModel(
+internal class AddAccountViewModel(
     private val addAccount: AddAccountUseCase,
     private val today: () -> LocalDate = ::today,
 ) : ViewModel() {

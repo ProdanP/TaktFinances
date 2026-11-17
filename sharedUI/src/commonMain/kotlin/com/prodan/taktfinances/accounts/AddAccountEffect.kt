@@ -1,5 +1,5 @@
 package com.prodan.taktfinances.accounts
 
-sealed interface AddAccountEffect {
+internal sealed interface AddAccountEffect {
     data object Saved : AddAccountEffect
 }

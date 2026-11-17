@@ -10,7 +10,7 @@ import androidx.lifecycle.flowWithLifecycle
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun <Effect> CollectEffects(
+internal fun <Effect> CollectEffects(
     effects: Flow<Effect>,
     onEffect: (Effect) -> Unit,
 ) {

@@ -11,11 +11,11 @@ import kotlinx.serialization.Serializable
 
 /** A top-level Home tab; the shell's navigation bar, rail or drawer switches between them. */
 @Serializable
-data class HomeRoute(val destination: HomeDestination = HomeDestination.Dashboard) : NavKey
+internal data class HomeRoute(val destination: HomeDestination = HomeDestination.Dashboard) : NavKey
 
 /** My Finances is the list pane of a list-detail layout, with Account Detail as its detail pane. */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-fun EntryProviderScope<NavKey>.homeEntry(
+internal fun EntryProviderScope<NavKey>.homeEntry(
     onNavigateToAddAccount: () -> Unit,
     onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
 ) {

@@ -31,7 +31,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** One Home tab; the app shell provides the navigation bar, rail or drawer around it. */
 @Composable
-fun HomeScreen(
+internal fun HomeScreen(
     destination: HomeDestination,
     onNavigateToAddAccount: () -> Unit,
     onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,

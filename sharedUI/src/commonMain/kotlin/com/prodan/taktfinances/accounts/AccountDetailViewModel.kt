@@ -19,6 +19,10 @@ import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.CheckInResult
 import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInResult
+import com.prodan.taktfinances.accounts.models.AccountDetailContent
+import com.prodan.taktfinances.accounts.models.CheckInSheetModel
+import com.prodan.taktfinances.accounts.models.MonthOption
+import com.prodan.taktfinances.accounts.models.SheetError
 import com.prodan.taktfinances.accounts.models.toHeader
 import com.prodan.taktfinances.accounts.models.toTimeline
 import com.prodan.taktfinances.core.Outcome
@@ -35,7 +39,7 @@ import kotlinx.datetime.yearMonth
  * Account Detail for [accountId]. [checkInOnOpen] opens the check-in sheet for the current month after
  * the first successful load. [today] is read on each load and save; tests pass a fixed date.
  */
-class AccountDetailViewModel(
+internal class AccountDetailViewModel(
     private val accountId: Long,
     private val checkInOnOpen: Boolean,
     private val repository: AccountRepository,
@@ -95,7 +99,7 @@ class AccountDetailViewModel(
         val previousBalance = previous?.let { p -> loaded.balances.firstOrNull { it.month == p }?.balanceMinor }
         _state.update {
             it.copy(
-                sheet = CheckInSheet(
+                sheet = CheckInSheetModel(
                     month = month,
                     monthLabel = monthLabel(month),
                     months = months.map { m -> MonthOption(m, monthLabel(m)) },
@@ -108,7 +112,7 @@ class AccountDetailViewModel(
         }
     }
 
-    private fun updateSheet(change: CheckInSheet.() -> CheckInSheet) {
+    private fun updateSheet(change: CheckInSheetModel.() -> CheckInSheetModel) {
         _state.update { state -> state.sheet?.let { state.copy(sheet = it.change()) } ?: state }
     }
 

@@ -62,6 +62,7 @@ import com.prodan.taktfinances.accounts.components.BalanceChart
 import com.prodan.taktfinances.accounts.components.BankIcon
 import com.prodan.taktfinances.accounts.components.CheckInSheetHost
 import com.prodan.taktfinances.accounts.components.icon
+import com.prodan.taktfinances.accounts.models.AccountDetailContent
 import com.prodan.taktfinances.accounts.models.AccountDetailHeaderModel
 import com.prodan.taktfinances.accounts.models.ChangeModel
 import com.prodan.taktfinances.accounts.models.TimelineRowModel
@@ -72,7 +73,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-fun AccountDetailScreen(
+internal fun AccountDetailScreen(
     accountId: Long,
     checkInOnOpen: Boolean,
     showBack: Boolean,

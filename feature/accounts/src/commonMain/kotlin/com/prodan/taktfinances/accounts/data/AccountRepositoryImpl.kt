@@ -28,9 +28,10 @@ internal class AccountRepositoryImpl(
     }
 
     override suspend fun all(): Outcome<List<SavedAccount>> = outcomeOf {
-        val periods = dao.selectActivePeriods().associateBy { it.accountId }
-        val entries = dao.selectActiveEntries().groupBy { it.periodId }
-        dao.selectAll().map { row ->
+        val (rows, activePeriods, activeEntries) = dao.selectAllActive()
+        val periods = activePeriods.associateBy { it.accountId }
+        val entries = activeEntries.groupBy { it.periodId }
+        rows.map { row ->
             val period = periods[row.id] ?: throw UnreadableRowException("account ${row.id} has no active period")
             row.toDomain(period.toDomain(entries[period.id].orEmpty()))
         }

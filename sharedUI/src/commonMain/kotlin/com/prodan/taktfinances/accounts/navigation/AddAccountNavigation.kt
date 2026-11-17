@@ -6,9 +6,9 @@ import com.prodan.taktfinances.accounts.AddAccountScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object AddAccountRoute : NavKey
+internal data object AddAccountRoute : NavKey
 
-fun EntryProviderScope<NavKey>.addAccountEntry(onClose: () -> Unit) {
+internal fun EntryProviderScope<NavKey>.addAccountEntry(onClose: () -> Unit) {
     entry<AddAccountRoute> {
         AddAccountScreen(onClose = onClose)
     }

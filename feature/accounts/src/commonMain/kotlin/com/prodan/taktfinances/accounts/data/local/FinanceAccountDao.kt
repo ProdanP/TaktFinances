@@ -46,6 +46,14 @@ interface FinanceAccountDao {
         return accountId to periodId
     }
 
+    /**
+     * Every account, the active periods and their entries, read in one transaction so an account
+     * added between the reads cannot show up without its period.
+     */
+    @Transaction
+    suspend fun selectAllActive(): Triple<List<FinanceAccountEntity>, List<AccountPeriodEntity>, List<MonthlyEntryEntity>> =
+        Triple(selectAll(), selectActivePeriods(), selectActiveEntries())
+
     @Query("DELETE FROM monthly_entry WHERE period_id = :periodId AND month = :month")
     suspend fun deleteEntry(periodId: Long, month: String)
 

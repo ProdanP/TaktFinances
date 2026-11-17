@@ -6,9 +6,9 @@ import com.prodan.taktfinances.onboarding.LandingScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object LandingRoute : NavKey
+internal data object LandingRoute : NavKey
 
-fun EntryProviderScope<NavKey>.landingEntry(onNavigateToHome: () -> Unit) {
+internal fun EntryProviderScope<NavKey>.landingEntry(onNavigateToHome: () -> Unit) {
     entry<LandingRoute> {
         LandingScreen(onNavigateToHome = onNavigateToHome)
     }
