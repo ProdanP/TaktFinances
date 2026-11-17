@@ -47,12 +47,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.prodan.taktfinances.accounts.AccountDetailIntent
-import com.prodan.taktfinances.accounts.CheckInSheet
+import com.prodan.taktfinances.accounts.models.CheckInSheetModel
 
 /** The check-in form: a bottom sheet on compact widths, a dialog on wide windows. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CheckInSheetHost(sheet: CheckInSheet, currency: String, wide: Boolean, onIntent: (AccountDetailIntent) -> Unit) {
+internal fun CheckInSheetHost(sheet: CheckInSheetModel, currency: String, wide: Boolean, onIntent: (AccountDetailIntent) -> Unit) {
     val dismiss = { onIntent(AccountDetailIntent.SheetDismissed) }
     if (wide) {
         Dialog(onDismissRequest = dismiss) {
@@ -87,7 +87,7 @@ internal fun CheckInSheetHost(sheet: CheckInSheet, currency: String, wide: Boole
 }
 
 @Composable
-private fun CheckInForm(sheet: CheckInSheet, currency: String, onIntent: (AccountDetailIntent) -> Unit, modifier: Modifier) {
+private fun CheckInForm(sheet: CheckInSheetModel, currency: String, onIntent: (AccountDetailIntent) -> Unit, modifier: Modifier) {
     Column(modifier) {
         Text("Check in", style = MaterialTheme.typography.headlineSmall)
         Text(
@@ -157,7 +157,7 @@ private fun CheckInForm(sheet: CheckInSheet, currency: String, onIntent: (Accoun
 
 /** Months from the current one back to the start month; future months are never offered. */
 @Composable
-private fun MonthField(sheet: CheckInSheet, onIntent: (AccountDetailIntent) -> Unit) {
+private fun MonthField(sheet: CheckInSheetModel, onIntent: (AccountDetailIntent) -> Unit) {
     // Menu expansion is transient widget state.
     var expanded by remember { mutableStateOf(false) }
     Box {

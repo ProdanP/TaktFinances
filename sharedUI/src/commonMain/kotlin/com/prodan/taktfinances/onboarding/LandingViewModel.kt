@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class LandingViewModel : ViewModel() {
+internal class LandingViewModel : ViewModel() {
     private val welcome = landingWelcome()
     private val _state = MutableStateFlow(
         LandingState(

@@ -3,7 +3,7 @@ package com.prodan.taktfinances.home.models
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 
 /** What the My Finances tab shows. */
-sealed interface MyFinancesContent {
+internal sealed interface MyFinancesContent {
     /** The first read has not finished yet. */
     data object Loading : MyFinancesContent
 

@@ -311,7 +311,7 @@ private val darkHighContrast = darkColorScheme(
     onTertiaryFixedVariant = Color(0xFF001629),
 )
 
-fun financesColorScheme(dark: Boolean, contrast: ThemeContrast): ColorScheme = when (dark) {
+internal fun financesColorScheme(dark: Boolean, contrast: ThemeContrast): ColorScheme = when (dark) {
     false -> when (contrast) {
         ThemeContrast.Standard -> lightStandard
         ThemeContrast.Medium -> lightMediumContrast

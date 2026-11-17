@@ -8,7 +8,7 @@ import com.prodan.taktfinances.accounts.domain.entity.monthLabel
 import com.prodan.taktfinances.accounts.domain.entity.recentEntries
 
 /** What "Recent activity" shows for the selected account. */
-sealed interface RecentActivityModel {
+internal sealed interface RecentActivityModel {
     /** Newest first, at most five; followed by "See all". */
     data class Entries(val rows: List<ActivityRow>, val currency: String) : RecentActivityModel
 
@@ -19,7 +19,7 @@ sealed interface RecentActivityModel {
     data object NoTrades : RecentActivityModel
 }
 
-data class ActivityRow(val month: String, val amount: String)
+internal data class ActivityRow(val month: String, val amount: String)
 
 internal fun SavedAccount.toRecentActivity(): RecentActivityModel = when (val period = period) {
     is Period.Transactions -> RecentActivityModel.NoTrades

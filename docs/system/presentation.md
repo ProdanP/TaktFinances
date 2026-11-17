@@ -31,7 +31,7 @@ sharedUI/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
   models/
     AccountCardModel.kt      # UI models: display-ready values the State holds
   navigation/
-    AddAccountNavigation.kt  # route and NavGraphBuilder entry for each screen
+    AddAccountNavigation.kt  # NavKey route and EntryProviderScope entry for each screen
   AddAccountScreen.kt        # screen composable, collects state and effects, plus private AddAccountContent
   AddAccountState.kt         # data class AddAccountState
   AddAccountIntent.kt        # sealed interface AddAccountIntent
@@ -44,14 +44,14 @@ sharedUI/src/commonMain/kotlin/com/prodan/taktfinances/<name>/
 - The screen's content lives in `<Screen>Screen.kt`. The stateless `<Screen>Content`, which lays out the whole screen from `State` and callbacks, is a `private` composable in that file, below `<Screen>Screen`. It is not a separate file and does not go in `components/`.
 - `components/` holds this feature's composables below screen level: cards, fields, rows, icons. They take values and callbacks and do not take a ViewModel. A composable two features use goes in the root `com.prodan.taktfinances` package or `theme`, not in a feature's `components`.
 - `models/` holds UI models: display-ready types that `State` holds when a domain type doesn't fit the screen as is, such as a formatted amount or a label with its color. Mapping from domain to a UI model is a `toUi()` extension function in `models/`. Domain types can go on `State` directly when they need no change. No Compose types (`Color`, `Painter`) go in a model. Keep a plain value such as an ARGB `Long`, and the composable converts it.
-- `navigation/` holds the feature's routes and one `NavGraphBuilder.<screen>Screen(...)` extension per screen that calls `composable(route) { <Screen>Screen(...) }`. Its parameters are the screen's dependencies and navigation callbacks. The shell (`App`) owns the `NavController`, calls these entries inside `NavHost`, and connects one feature's callback to another feature's route. A feature does not navigate to another feature's route by itself.
+- `navigation/` holds the feature's routes and one `EntryProviderScope<NavKey>.<screen>Entry(...)` extension per screen that calls `entry<Route> { <Screen>Screen(...) }`. A route is a `@Serializable` `NavKey`. Its parameters are the screen's navigation callbacks and layout flags. The shell (`App`) owns the `NavBackStack`, calls these entries inside `NavDisplay`'s `entryProvider`, registers every route in its saved-state serializers, and connects one feature's callback to another feature's route. A feature does not navigate to another feature's route by itself.
 - The ViewModel imports from `models` but not from `components` or `navigation`.
 
 Three types:
 
 - `State` — one immutable `data class`. Loading, content, and error live here.
 - `Intent` — one `sealed interface` of user and lifecycle events. The only public entry is `onIntent`.
-- `Effect` — one-off work the state must not remember: navigation and short messages. A `Channel.BUFFERED` exposed as a `Flow`. The screen collects it with `CollectEffects`. The ViewModel does not hold a `NavController`.
+- `Effect` — one-off work the state must not remember: navigation and short messages. A `Channel.BUFFERED` exposed as a `Flow`. The screen collects it with `CollectEffects`. The ViewModel does not hold the back stack.
 
 ```kotlin
 class AccountViewModel(
@@ -86,7 +86,7 @@ The screen collects `state` with `collectAsStateWithLifecycle` and sends intents
 
 ### Collecting effects
 
-The shell owns the `NavController` and connects features. Each feature declares its routes and graph entries in its `navigation/` package. `App` calls those entries and passes a navigation callback into each one, such as `onNavigateToHome`. The screen does not take a `NavController`.
+The shell owns the back stack and connects features. Each feature declares its routes and entries in its `navigation/` package. `App` calls those entries and passes a navigation callback into each one, such as `onNavigateToHome`. The screen does not take the back stack.
 
 The ViewModel sends an effect from `onIntent`. The screen collects `effects` with `CollectEffects` in `com.prodan.taktfinances`. Collection runs while the lifecycle is at least `STARTED` and stops on `ON_STOP`. `Channel.BUFFERED` keeps an effect that is sent while collection is stopped. The next start delivers it. The button sends the intent. The collector calls the navigation callback.
 

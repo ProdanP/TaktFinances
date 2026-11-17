@@ -28,7 +28,7 @@ import taktfinances.sharedui.generated.resources.bank_victoriabank
 
 /** Bank logo in a circle; banks without a logo fall back to a monogram badge. */
 @Composable
-fun BankIcon(bank: Bank, modifier: Modifier = Modifier, size: Dp = 28.dp) {
+internal fun BankIcon(bank: Bank, modifier: Modifier = Modifier, size: Dp = 28.dp) {
     val logo = bank.logo
     Box(
         modifier = modifier

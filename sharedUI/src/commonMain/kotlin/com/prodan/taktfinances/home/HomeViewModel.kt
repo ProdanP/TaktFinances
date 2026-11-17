@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
 /** [today] decides each card's current balance; tests pass a fixed date. */
-class HomeViewModel(
+internal class HomeViewModel(
     private val accounts: AccountRepository,
     private val today: () -> LocalDate = ::today,
 ) : ViewModel() {

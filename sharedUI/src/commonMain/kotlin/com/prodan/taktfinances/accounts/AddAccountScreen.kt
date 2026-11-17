@@ -78,7 +78,7 @@ import com.prodan.taktfinances.widthClass
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun AddAccountScreen(
+internal fun AddAccountScreen(
     onClose: () -> Unit,
     viewModel: AddAccountViewModel = koinViewModel(),
 ) {

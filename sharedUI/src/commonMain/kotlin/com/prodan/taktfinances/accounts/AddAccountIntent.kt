@@ -8,7 +8,7 @@ import com.prodan.taktfinances.accounts.domain.entity.FormField
 import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.entity.LoanDirection
 
-sealed interface AddAccountIntent {
+internal sealed interface AddAccountIntent {
     data class TypeSelected(val type: AccountType) : AddAccountIntent
     data class CurrencySelected(val currency: Currency) : AddAccountIntent
     data class NameChanged(val value: String) : AddAccountIntent

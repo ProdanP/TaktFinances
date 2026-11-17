@@ -88,7 +88,7 @@ private fun BankRow(banks: List<Bank>, selected: Bank?, onSelected: (Bank) -> Un
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         contentPadding = PaddingValues(end = 16.dp),
     ) {
-        items(banks) { bank ->
+        items(banks, key = { it.name }) { bank ->
             val isSelected = bank == selected
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

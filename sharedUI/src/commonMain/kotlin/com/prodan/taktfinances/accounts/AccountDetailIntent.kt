@@ -3,7 +3,7 @@ package com.prodan.taktfinances.accounts
 import com.prodan.taktfinances.accounts.models.ChartRange
 import kotlinx.datetime.YearMonth
 
-sealed interface AccountDetailIntent {
+internal sealed interface AccountDetailIntent {
     /** The screen became visible; loads the account (again). */
     data object Shown : AccountDetailIntent
     data object RetryTapped : AccountDetailIntent

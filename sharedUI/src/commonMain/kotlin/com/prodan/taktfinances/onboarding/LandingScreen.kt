@@ -29,7 +29,7 @@ import taktfinances.sharedui.generated.resources.Res
 import taktfinances.sharedui.generated.resources.landing
 
 @Composable
-fun LandingScreen(
+internal fun LandingScreen(
     onNavigateToHome: () -> Unit,
     viewModel: LandingViewModel = koinViewModel(),
 ) {

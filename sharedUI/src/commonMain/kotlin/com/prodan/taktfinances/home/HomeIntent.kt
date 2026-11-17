@@ -1,6 +1,6 @@
 package com.prodan.taktfinances.home
 
-sealed interface HomeIntent {
+internal sealed interface HomeIntent {
     data object AddAccountTapped : HomeIntent
 
     /** The Home screen became visible (first start or returning from another screen). */
