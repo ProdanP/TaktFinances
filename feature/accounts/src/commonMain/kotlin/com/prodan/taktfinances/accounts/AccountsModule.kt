@@ -2,9 +2,13 @@ package com.prodan.taktfinances.accounts
 
 import com.prodan.taktfinances.accounts.data.AccountRepositoryImpl
 import com.prodan.taktfinances.accounts.domain.AccountRepository
+import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
 import kotlin.experimental.ExperimentalObjCRefinement
 import kotlin.native.HiddenFromObjC
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -17,4 +21,7 @@ import org.koin.dsl.module
 @HiddenFromObjC // Only the composition root includes this.
 val accountsModule: Module = module {
     singleOf(::AccountRepositoryImpl) bind AccountRepository::class
+    factoryOf(::AddAccountUseCase)
+    factoryOf(::CheckInUseCase)
+    factoryOf(::DeleteCheckInUseCase)
 }
