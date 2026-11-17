@@ -78,7 +78,7 @@ For an Investment the form SHALL require an investment kind of Stocks/ETF, Crypt
 - **THEN** all six investment kind chips are visible without scrolling sideways
 
 #### Scenario: Valid investment
-- **WHEN** the user selects kind Crypto, enters platform "  Binance " and saves with valid name and amount
+- **WHEN** the user selects kind Crypto, enters platform "  Binance " and saves with a valid name
 - **THEN** an Investment account is created with kind Crypto and platform "Binance"
 
 #### Scenario: Blank platform
