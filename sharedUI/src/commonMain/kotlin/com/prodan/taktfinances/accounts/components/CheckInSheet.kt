@@ -39,6 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -169,7 +173,10 @@ private fun MonthField(sheet: CheckInSheet, onIntent: (AccountDetailIntent) -> U
         Surface(
             onClick = { expanded = true },
             color = androidx.compose.ui.graphics.Color.Transparent,
-            modifier = Modifier.matchParentSize(),
+            modifier = Modifier.matchParentSize().semantics {
+                contentDescription = "Month, ${sheet.monthLabel}"
+                role = Role.DropdownList
+            },
         ) {}
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             sheet.months.forEach { option ->

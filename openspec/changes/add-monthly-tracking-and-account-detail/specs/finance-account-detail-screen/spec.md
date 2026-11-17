@@ -7,11 +7,19 @@ Defines the Account Detail screen, where the user reviews one account: its heade
 ## ADDED Requirements
 
 ### Requirement: Open Account Detail
-Account Detail SHALL show one account and SHALL offer a back action that returns to My Finances with that account's card still selected.
+Account Detail SHALL show one account. When it is the only pane it SHALL offer a back action that returns to My Finances with that account's card still selected. When it is shown beside My Finances it SHALL offer no back action, and opening another account SHALL replace it.
 
 #### Scenario: Back to My Finances
-- **WHEN** the user opens Account Detail for "Salary" from My Finances and goes back
+- **WHEN** the user opens Account Detail for "Salary" from My Finances on a phone and goes back
 - **THEN** My Finances is shown with the "Salary" card selected
+
+#### Scenario: Beside My Finances
+- **WHEN** the user opens Account Detail for "Salary" in a window that fits two panes
+- **THEN** Account Detail is shown beside My Finances with no back action, and the "Salary" card stays selected
+
+#### Scenario: Open another account
+- **WHEN** Account Detail for "Salary" is beside My Finances and the user taps the "Car" card
+- **THEN** Account Detail for "Car" replaces it
 
 ### Requirement: Account Detail header
 The header SHALL show the account's name, its bank badge or type icon, the same details summary as its card, the last 4 digits when recorded, and its current balance with the account's currency.
@@ -125,7 +133,7 @@ Amounts and changes on Account Detail SHALL have spoken labels that include the 
 - **THEN** it reads the change as an increase of 1,530.00 MDL, 14.2 percent
 
 ### Requirement: Account Detail on phones and medium widths
-When the available width does not fit two panes, Account Detail SHALL show the header, chart, action and timeline in one scrolling column, kept to a bounded width and centred when wider than a phone.
+When the width available to Account Detail does not fit two panes, Account Detail SHALL show the header, chart, action and timeline in one scrolling column, kept to a bounded width and centred when wider than a phone.
 
 #### Scenario: Phone portrait
 - **WHEN** Account Detail is open on a phone in portrait
@@ -135,13 +143,17 @@ When the available width does not fit two panes, Account Detail SHALL show the h
 - **WHEN** Account Detail is open on a tablet in portrait
 - **THEN** the column is centred and does not span the full width
 
-### Requirement: Account Detail two-pane layout on wide windows
-When the available width fits two panes, Account Detail SHALL show the header and chart in one pane and the action and timeline in a second pane beside it, each scrolling on its own.
+### Requirement: Account Detail beside My Finances on wide windows
+When the window fits two panes, Account Detail SHALL be shown in a detail pane beside My Finances. When the detail pane itself fits two panes, Account Detail SHALL show the header and chart in one column and the action and timeline in a second column beside it, each scrolling on its own; otherwise it SHALL use the one-column layout.
 
-#### Scenario: Desktop window
-- **WHEN** Account Detail is open in a wide desktop window
-- **THEN** the header and chart are in one pane and "Check in" with the timeline is in a second pane beside it
+#### Scenario: Tablet landscape
+- **WHEN** Account Detail is open on a tablet in landscape
+- **THEN** My Finances and Account Detail are shown side by side, and Account Detail shows one column
+
+#### Scenario: Wide desktop window
+- **WHEN** Account Detail is open in a desktop window wide enough that its pane fits two panes
+- **THEN** it is beside My Finances, with the header and chart in one column and "Check in" with the timeline in a second column
 
 #### Scenario: Narrowing the window
 - **WHEN** the user narrows the window until two panes no longer fit
-- **THEN** the screen shows one column and the selected chart range is kept
+- **THEN** Account Detail is shown alone with a back action, and the selected chart range is kept

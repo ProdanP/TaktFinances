@@ -2,12 +2,11 @@ import Charts
 import SharedLogic
 import SwiftUI
 
-/// Account Detail: one scrolling column on compact width, header and chart beside the timeline on
-/// regular width.
+/// Account Detail: one scrolling column, or header and chart beside the timeline when its own width
+/// fits two panes.
 struct AccountDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var model: AccountDetailModel
 
     init(repository: AccountRepository, accountId: Int64, checkInOnOpen: Bool) {
@@ -23,7 +22,8 @@ struct AccountDetailView: View {
             case .failed:
                 loadFailed(palette: palette)
             case let .loaded(loaded):
-                if horizontalSizeClass == .regular {
+                GeometryReader { geometry in
+                if geometry.size.width >= AdaptiveLayout.twoPaneWidth {
                     HStack(alignment: .top, spacing: 32) {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 24) {
@@ -49,6 +49,7 @@ struct AccountDetailView: View {
                         .frame(maxWidth: AdaptiveLayout.phoneColumnWidth)
                         .frame(maxWidth: .infinity)
                     }
+                }
                 }
             }
         }
@@ -175,7 +176,7 @@ struct AccountDetailView: View {
                 HStack {
                     Text("History").font(.headline).accessibilityAddTraits(.isHeader)
                     Spacer()
-                    if wide { checkInButton }
+                    if wide { checkInButton.fixedSize() }
                 }
                 VStack(spacing: 0) {
                     ForEach(timeline) { row in
@@ -202,7 +203,6 @@ struct AccountDetailView: View {
             Label("Check in", systemImage: "plus").frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
-        .fixedSize(horizontal: horizontalSizeClass == .regular, vertical: false)
     }
 
     private func timelineRow(_ row: TimelineRow, palette: FinancesColorScheme) -> some View {

@@ -48,6 +48,25 @@ Below the cards My Finances SHALL show a "Recent activity" area that belongs to 
 - **WHEN** the user swipes to another account
 - **THEN** the "Recent activity" area belongs to the newly selected account
 
+### Requirement: My Finances two-pane layout on wide windows
+When the available width fits two panes, My Finances SHALL be shown in a list pane beside a detail pane. The list pane SHALL hold the cards, page indicator and "Recent activity" stacked as on a phone. The detail pane SHALL hold Account Detail of the opened account, or "Open an account to see its history" before an account is opened. The width left after the navigation drawer or rail SHALL decide this, not the device type.
+
+#### Scenario: Desktop window
+- **WHEN** My Finances is shown in a wide desktop window with accounts and no account opened
+- **THEN** the cards and "Recent activity" are in one pane and "Open an account to see its history" is in a second pane beside it
+
+#### Scenario: Selection updates the second pane
+- **WHEN** the two panes are shown and the user moves to another card
+- **THEN** "Recent activity" belongs to the newly selected account
+
+#### Scenario: Narrowing the window
+- **WHEN** the user narrows the desktop window until two panes no longer fit and no account is opened
+- **THEN** My Finances is shown alone with "Recent activity" below the cards, and the selected card stays selected
+
+#### Scenario: Empty and failure states stay single
+- **WHEN** My Finances is shown in a wide window with no accounts, or after a failed read
+- **THEN** the list pane shows the "Add your first account" card or the failure message, and the detail pane shows "Open an account to see its history"
+
 ## ADDED Requirements
 
 ### Requirement: Open Account Detail from a card

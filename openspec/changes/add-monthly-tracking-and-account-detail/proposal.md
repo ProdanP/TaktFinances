@@ -13,7 +13,7 @@ Accounts today hold one amount, fixed when they are created, and nothing can upd
 - **Monthly check-in** (FR-MO-1): from Account Detail the user enters a month's balance, with the previous month's balance as a hint and a "Same as last month" shortcut. One entry per month; saving a month that has an entry replaces it.
 - **Edit and delete monthly entries** (FR-MO-2). The start month can be edited but not deleted.
 - **Missing months** carry the previous balance forward and are labelled "Not checked in" (FR-MO-3).
-- **Account Detail screen** (§10.1, FR-AD-1, FR-AD-2, FR-MO-4): header with balance and "This month" change, a month-end balance chart (6M / 1Y / All), and the monthly timeline. Two panes on wide windows.
+- **Account Detail screen** (§10.1, FR-AD-1, FR-AD-2, FR-MO-4): header with balance and "This month" change, a month-end balance chart (6M / 1Y / All), and the monthly timeline. Shown beside My Finances on wide windows.
 - **My Finances**: tapping a card opens Account Detail (FR-MF-4); cards show the current balance; "Recent activity" shows the latest monthly entries with a "See all" action (FR-MF-3).
 - Same features on Android, desktop and iOS (NFR-3).
 

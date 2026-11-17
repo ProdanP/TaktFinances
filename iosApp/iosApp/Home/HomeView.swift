@@ -9,12 +9,16 @@ struct HomeView: View {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var model: HomeModel
+    /// The account shown beside My Finances on regular width; nil shows the placeholder.
+    @State private var opened: OpenedAccount?
+    private let repository: AccountRepository
 
     init(
         repository: AccountRepository,
         onAddAccount: @escaping () -> Void = {},
         onOpenAccount: @escaping (_ id: Int64, _ checkIn: Bool) -> Void = { _, _ in }
     ) {
+        self.repository = repository
         self.onAddAccount = onAddAccount
         self.onOpenAccount = onOpenAccount
         _model = State(initialValue: HomeModel(repository: repository))
@@ -37,6 +41,13 @@ struct HomeView: View {
         .navigationTitle(model.state.selected == .myfinances ? model.state.selected.title : "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(model.state.selected == .myfinances ? .visible : .hidden, for: .navigationBar)
+        .onChange(of: horizontalSizeClass) { _, sizeClass in
+            // Collapsing to one column leaves the opened account on its own, pushed over My Finances.
+            if sizeClass == .compact, let opened {
+                self.opened = nil
+                onOpenAccount(opened.id, false)
+            }
+        }
     }
 
     @ViewBuilder
@@ -54,16 +65,58 @@ struct HomeView: View {
 
     @ViewBuilder
     private func regularSplit(palette: FinancesColorScheme) -> some View {
-        NavigationSplitView {
-            List(selection: sidebarSelection) {
-                ForEach(model.state.destinations, id: \.name) { destination in
-                    Label(destination.title, systemImage: destination.systemImage)
-                        .tag(Optional(destination))
+        if model.state.selected == .myfinances {
+            // My Finances is the list column and Account Detail the detail column beside it.
+            NavigationSplitView {
+                sidebar
+            } content: {
+                destinationBody(.myfinances, palette: palette)
+            } detail: {
+                if let opened {
+                    AccountDetailView(repository: repository, accountId: opened.id, checkInOnOpen: opened.checkIn)
+                        .id(opened)
+                } else {
+                    accountPlaceholder(palette: palette)
                 }
             }
-            .navigationTitle("Home")
-        } detail: {
-            destinationBody(model.state.selected, palette: palette)
+        } else {
+            NavigationSplitView {
+                sidebar
+            } detail: {
+                destinationBody(model.state.selected, palette: palette)
+            }
+        }
+    }
+
+    private var sidebar: some View {
+        List(selection: sidebarSelection) {
+            ForEach(model.state.destinations, id: \.name) { destination in
+                Label(destination.title, systemImage: destination.systemImage)
+                    .tag(Optional(destination))
+            }
+        }
+        .navigationTitle("Home")
+    }
+
+    private func accountPlaceholder(palette: FinancesColorScheme) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "building.columns.fill").foregroundStyle(palette.onSurfaceVariant)
+            Text("Open an account to see its history")
+                .font(.body)
+                .foregroundStyle(palette.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(palette.background)
+    }
+
+    /// Beside My Finances on regular width; pushed over it on compact width.
+    private func openAccount(_ id: Int64, _ checkIn: Bool) {
+        if horizontalSizeClass == .compact {
+            onOpenAccount(id, checkIn)
+        } else {
+            opened = OpenedAccount(id: id, checkIn: checkIn, token: UUID())
         }
     }
 
@@ -106,7 +159,7 @@ struct HomeView: View {
                 palette: palette,
                 send: model.send,
                 onAddFirstAccount: onAddAccount,
-                onOpenAccount: onOpenAccount
+                onOpenAccount: openAccount
             )
         } else {
             destinationMock(title: destination.title, palette: palette)
@@ -120,6 +173,13 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(palette.background)
     }
+}
+
+/// An account opened beside My Finances. `token` makes "Check in" on the same account reopen it with the sheet.
+private struct OpenedAccount: Hashable {
+    let id: Int64
+    let checkIn: Bool
+    let token: UUID
 }
 
 private extension HomeDestination {
