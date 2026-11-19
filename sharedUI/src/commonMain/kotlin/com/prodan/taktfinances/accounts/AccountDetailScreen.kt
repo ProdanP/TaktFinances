@@ -26,15 +26,22 @@ import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +49,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -57,10 +68,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prodan.taktfinances.AdaptiveLayout
+import com.prodan.taktfinances.CollectEffects
 import com.prodan.taktfinances.WidthClass
 import com.prodan.taktfinances.accounts.components.BalanceChart
 import com.prodan.taktfinances.accounts.components.BankIcon
 import com.prodan.taktfinances.accounts.components.CheckInSheetHost
+import com.prodan.taktfinances.accounts.components.EditAccountSheetHost
 import com.prodan.taktfinances.accounts.components.icon
 import com.prodan.taktfinances.accounts.models.AccountDetailContent
 import com.prodan.taktfinances.accounts.models.AccountDetailHeaderModel
@@ -70,6 +83,7 @@ import com.prodan.taktfinances.theme.ChangeDirection
 import com.prodan.taktfinances.theme.changeColor
 import com.prodan.taktfinances.widthClass
 import org.koin.compose.viewmodel.koinViewModel
+import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 
 @Composable
@@ -78,13 +92,24 @@ internal fun AccountDetailScreen(
     checkInOnOpen: Boolean,
     showBack: Boolean,
     onBack: () -> Unit,
+    onAccountChanged: () -> Unit = {},
+    onAccountDeleted: (neighbourId: Long?) -> Unit = {},
     viewModel: AccountDetailViewModel = koinViewModel(key = "account-$accountId") {
         parametersOf(accountId, checkInOnOpen)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onIntent(AccountDetailIntent.Shown) }
-    AccountDetailContent(state = state, onIntent = viewModel::onIntent, showBack = showBack, onBack = onBack)
+    CollectEffects(viewModel.effects) { effect ->
+        when (effect) {
+            AccountDetailEffect.AccountChanged -> onAccountChanged()
+            is AccountDetailEffect.AccountDeleted -> onAccountDeleted(effect.neighbourId)
+            AccountDetailEffect.DeleteFailed -> scope.launch { snackbar.showSnackbar(DELETE_ACCOUNT_FAILED_MESSAGE) }
+        }
+    }
+    AccountDetailContent(state = state, onIntent = viewModel::onIntent, showBack = showBack, onBack = onBack, snackbar = snackbar)
 }
 
 internal const val DETAIL_LOAD_FAILED_MESSAGE = "Couldn't load this account"
@@ -97,10 +122,12 @@ private fun AccountDetailContent(
     onIntent: (AccountDetailIntent) -> Unit,
     showBack: Boolean,
     onBack: () -> Unit,
+    snackbar: SnackbarHostState,
 ) {
     val loaded = state.content as? AccountDetailContent.Loaded
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(loaded?.header?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -110,6 +137,7 @@ private fun AccountDetailContent(
                         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                     }
                 },
+                actions = { if (loaded != null) AccountActions(deleting = state.deleting, onIntent = onIntent) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -151,11 +179,53 @@ private fun AccountDetailContent(
                         }
                     }
                     state.sheet?.let { CheckInSheetHost(it, content.header.currency, wide, onIntent) }
+                    state.edit?.let { EditAccountSheetHost(it, content.header.currency, wide, onIntent) }
+                    if (state.confirmDeleteAccount) DeleteAccountDialog(content.header.name, onIntent)
                 }
             }
         }
     }
 }
+
+/** "Edit" and the overflow menu holding "Delete account"; both do nothing while a delete runs. */
+@Composable
+private fun AccountActions(deleting: Boolean, onIntent: (AccountDetailIntent) -> Unit) {
+    // Menu expansion is transient widget state.
+    var menuOpen by remember { mutableStateOf(false) }
+    IconButton(onClick = { onIntent(AccountDetailIntent.EditTapped) }, enabled = !deleting) {
+        Icon(Icons.Outlined.Edit, contentDescription = "Edit")
+    }
+    IconButton(onClick = { menuOpen = true }, enabled = !deleting) {
+        Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+    }
+    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+        DropdownMenuItem(
+            text = { Text("Delete account", color = MaterialTheme.colorScheme.error) },
+            onClick = {
+                menuOpen = false
+                onIntent(AccountDetailIntent.DeleteAccountTapped)
+            },
+        )
+    }
+}
+
+@Composable
+private fun DeleteAccountDialog(name: String, onIntent: (AccountDetailIntent) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onIntent(AccountDetailIntent.DeleteAccountCancelled) },
+        title = { Text("Delete \"$name\"?") },
+        text = { Text(DELETE_ACCOUNT_WARNING) },
+        confirmButton = {
+            TextButton(onClick = { onIntent(AccountDetailIntent.DeleteAccountConfirmed) }) {
+                Text("Delete", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = { onIntent(AccountDetailIntent.DeleteAccountCancelled) }) { Text("Cancel") } },
+    )
+}
+
+internal const val DELETE_ACCOUNT_WARNING =
+    "This removes the account and all its history, including past months on the Dashboard. This can't be undone."
 
 @Composable
 private fun Header(header: AccountDetailHeaderModel) {

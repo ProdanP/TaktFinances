@@ -109,13 +109,25 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun removedSelectionFallsBackToFirst() {
-        val first = repository.insert(loan("Salary"))
+    fun deletedSelectionSelectsTheNextCard() {
+        repository.insert(loan("Salary"))
         val second = repository.insert(loan("Brokerage"))
+        val third = repository.insert(loan("Car loan"))
         send(HomeIntent.Shown, HomeIntent.AccountSelected(second.id))
         repository.remove(second.id)
         send(HomeIntent.Shown)
-        assertEquals(first.id, accounts.selectedId)
+        assertEquals(third.id, accounts.selectedId)
+    }
+
+    @Test
+    fun deletedLastCardSelectsThePreviousOne() {
+        repository.insert(loan("Salary"))
+        val second = repository.insert(loan("Brokerage"))
+        val third = repository.insert(loan("Car loan"))
+        send(HomeIntent.Shown, HomeIntent.AccountSelected(third.id))
+        repository.remove(third.id)
+        send(HomeIntent.Shown)
+        assertEquals(second.id, accounts.selectedId)
     }
 
     @Test

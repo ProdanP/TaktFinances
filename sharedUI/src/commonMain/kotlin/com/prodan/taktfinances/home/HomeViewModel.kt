@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.accounts.domain.entity.balanceMinor
+import com.prodan.taktfinances.accounts.domain.entity.neighbourAfterRemoving
 import com.prodan.taktfinances.accounts.domain.entity.today
 import com.prodan.taktfinances.core.Outcome
 import com.prodan.taktfinances.home.models.MyFinancesContent
@@ -57,7 +58,8 @@ internal class HomeViewModel(
 
     /**
      * A newly added account is selected; otherwise the previous selection is kept while it
-     * still exists, and the first card is selected when it does not.
+     * still exists. When it was deleted, its neighbour is selected; the first card only when
+     * nothing was selected before.
      */
     private fun contentFor(list: List<SavedAccount>): MyFinancesContent {
         val previousIds = knownIds
@@ -68,6 +70,7 @@ internal class HomeViewModel(
         val selectedId = when {
             added.isNotEmpty() -> added.maxOf { it.id }
             previousSelection != null && list.any { it.id == previousSelection } -> previousSelection
+            previousSelection != null -> neighbourAfterRemoving(list, previousSelection)!!.id
             else -> list.first().id
         }
         val date = today()

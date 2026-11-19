@@ -23,4 +23,17 @@ internal sealed interface AccountDetailIntent {
     data object DeleteConfirmed : AccountDetailIntent
     data object DeleteCancelled : AccountDetailIntent
     data object SheetDismissed : AccountDetailIntent
+
+    /** "Edit" in the top bar: the "Edit account" sheet. */
+    data object EditTapped : AccountDetailIntent
+    data class EditNameChanged(val value: String) : AccountDetailIntent
+    data class EditAmountChanged(val value: String) : AccountDetailIntent
+    data class EditAmountFocusChanged(val focused: Boolean) : AccountDetailIntent
+    data object EditSaveTapped : AccountDetailIntent
+    data object EditDismissed : AccountDetailIntent
+
+    /** "Delete account" in the overflow menu: asks for confirmation. */
+    data object DeleteAccountTapped : AccountDetailIntent
+    data object DeleteAccountConfirmed : AccountDetailIntent
+    data object DeleteAccountCancelled : AccountDetailIntent
 }

@@ -17,6 +17,10 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -56,6 +60,8 @@ fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
         // My Finances and Account Detail share the window when it fits two panes.
         val twoPane = directive.maxHorizontalPartitions > 1
         val listDetail = rememberListDetailSceneStrategy<NavKey>(directive = directive)
+        // Bumped after Account Detail changes an account, so My Finances beside it reads the accounts again.
+        var accountsVersion by rememberSaveable { mutableIntStateOf(0) }
 
         val top = backStack.lastOrNull()
         val selectedTab = (backStack.firstOrNull() as? HomeRoute)?.destination
@@ -98,6 +104,7 @@ fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
                             backStack.removeAll { it is AccountDetailRoute }
                             backStack.add(AccountDetailRoute(id, checkIn))
                         },
+                        accountsVersion = accountsVersion,
                     )
                     addAccountEntry(
                         onClose = { backStack.removeLastOrNull() },
@@ -105,6 +112,13 @@ fun App(contrast: ThemeContrast = ThemeContrast.Standard) {
                     accountDetailEntry(
                         showBack = !twoPane,
                         onBack = { backStack.removeLastOrNull() },
+                        onAccountChanged = { accountsVersion++ },
+                        onAccountDeleted = { neighbourId ->
+                            accountsVersion++
+                            backStack.removeAll { it is AccountDetailRoute }
+                            // Beside My Finances the detail pane moves to the neighbour; alone, My Finances shows.
+                            if (twoPane && neighbourId != null) backStack.add(AccountDetailRoute(neighbourId))
+                        },
                     )
                 },
             )

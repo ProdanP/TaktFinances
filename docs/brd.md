@@ -73,6 +73,7 @@ Primary market: Moldova (MDL is the default currency, local banks are listed, of
 | D23 | A trade has an optional **fee**. It is shown on the trade and summed per account, but doesn't change the holdings value (no cash is tracked, D15). |
 | D24 | **No data migration**: v1 starts with a fresh database; accounts saved by development builds are not kept. |
 | D25 | The tracking mode is chosen **only when the account is created** and **can't be changed afterwards**. There is no mode switch. To track an account differently, the user deletes it and creates a new one. |
+| D26 | Only an account's **name** and **current balance** can be edited. Type, currency, details and tracking mode are fixed at creation; to change one, the user deletes the account and creates a new one. |
 
 ---
 
@@ -182,7 +183,7 @@ Each journey lists the trigger, the main steps, and the expected result. Accepta
 | J3 | Log a transaction | Opens a Transactions-mode account | Taps "Add transaction" (Bank: amount, In/Out, category; Loan: repayment or additional amount; Investment: a Buy/Sell trade); saves | Balance or value and charts update |
 | J3b | Update investment prices | Opens a Investment account | Taps "Update prices", edits the latest price of any holding; saves | Holdings and account value update |
 | J5 | Review an account | Taps a card on My Finances | Sees header, chart, timeline, type block | Understands the account's state and trend |
-| J6 | Edit or delete an account | Account Detail menu | Edits allowed fields and saves, or deletes after confirming | Account updated, or removed with all its history |
+| J6 | Edit or delete an account | Account Detail top bar | Edits the name or this month's balance and saves, or deletes after confirming | Account updated, or removed with all its history |
 | J7 | Review net worth | Opens Dashboard | Reads net worth, monthly change, chart, allocation, top movers | Knows whether total money went up or down |
 | J8 | Change Main Currency | Settings, Main Currency | Picks another currency | All combined values shown in the new currency |
 | J9 | Check exchange rates | Settings, Exchange rates | Reads today's rates; optionally refreshes | Knows which rates the totals use |
@@ -289,18 +290,20 @@ The "Recent activity" area below the selected card shows the latest 5 entries of
 
 ### 8.3 Edit an account (J6)
 
-#### FR-AC-4 What can be edited
-Account Detail offers **Edit**, which opens the Add Account form filled with the account's values, titled "Edit account", with the action "Save".
+#### FR-AC-4 What can be edited (D26)
+Account Detail offers **Edit**, which opens a short sheet titled "Edit account" with the action "Save".
 
 | Field | Editable? |
 |---|---|
-| Name, type details, optional detail fields | Always |
-| Type | Only while the account has no entries besides its starting balance |
-| Currency | Only while the account has no entries besides its starting balance |
-| Amount | Not on this form; balances change through check-ins or transactions |
-| Tracking mode | Never. Shown read-only; it is fixed when the account is created (D25) |
+| Name | Always, with the same rule as Add Account (required, trimmed) |
+| Balance this month | Monthly accounts only; filled with the current balance |
+| Type, currency, details, tracking mode | Never; fixed when the account is created (D25, D26) |
 
-- WHEN the account has entries and the user opens Edit, THEN type and currency are shown read-only with the hint "Can't be changed once the account has history".
+- WHEN the user saves a different "Balance this month", THEN it is stored as the current month's entry, exactly like a check-in for the current month; earlier months don't change.
+- WHEN "Balance this month" is unchanged, THEN no entry is stored, so a carried-forward month stays "Not checked in".
+- WHEN nothing changed and the user taps "Save", THEN the sheet closes and nothing is stored.
+- WHEN the account is an Investment account, THEN the sheet shows the name only; its value comes from holdings.
+- Editing the current balance of a Transactions-mode account is decided with S2.
 - WHEN the user saves valid changes, THEN Account Detail shows the updated values.
 
 ### 8.4 Delete an account (J6)

@@ -37,5 +37,14 @@ final class PreviewAccountRepository: AccountRepository {
     func deleteMonthlyEntry(periodId: Int64, month: Kotlinx_datetimeYearMonth, completionHandler: @escaping (Outcome?, Error?) -> Void) {
         completionHandler(OutcomeOk(value: NSNull()), nil)
     }
+
+    func edit(id: Int64, name: String, periodId: Int64, entry: MonthlyEntry?, completionHandler: @escaping (Outcome?, Error?) -> Void) {
+        completionHandler(OutcomeOk(value: NSNull()), nil)
+    }
+
+    func delete(id: Int64, completionHandler: @escaping (Outcome?, Error?) -> Void) {
+        saved.removeAll { $0.id == id }
+        completionHandler(OutcomeOk(value: NSNull()), nil)
+    }
 }
 #endif

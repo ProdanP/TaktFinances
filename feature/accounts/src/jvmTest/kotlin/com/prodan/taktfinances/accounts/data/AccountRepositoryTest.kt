@@ -147,5 +147,44 @@ class AccountRepositoryTest {
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.add(salary, monthlyStart(1)))
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.all())
         assertEquals(Outcome.Failed(Reason.Unavailable), repository.saveMonthlyEntry(1, MonthlyEntry(nov, 1)))
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.edit(1, "Daily", 1, MonthlyEntry(nov, 1)))
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.delete(1))
+    }
+
+    @Test
+    fun editRenamesAndSetsTheMonth() = runTest {
+        val saved = ok(repository.add(salary, monthlyStart(250_000)))
+        ok(repository.edit(saved.id, "Daily card", saved.period.id, MonthlyEntry(nov, 300_000)))
+        val read = ok(repository.get(saved.id))
+        assertEquals("Daily card", read.account.name)
+        assertEquals(listOf(MonthlyEntry(nov, 300_000)), assertIs<Period.Monthly>(read.period).entries)
+
+        ok(repository.edit(saved.id, "Daily card", saved.period.id, MonthlyEntry(oct, 200_000)))
+        assertEquals(
+            listOf(MonthlyEntry(oct, 200_000), MonthlyEntry(nov, 300_000)),
+            assertIs<Period.Monthly>(ok(repository.get(saved.id)).period).entries,
+        )
+    }
+
+    @Test
+    fun editWithoutEntryLeavesEntriesAlone() = runTest {
+        val saved = ok(repository.add(salary, monthlyStart(250_000)))
+        ok(repository.edit(saved.id, "Daily card", saved.period.id, null))
+        val read = ok(repository.get(saved.id))
+        assertEquals(salary.copy(name = "Daily card"), read.account)
+        assertEquals(saved.period, read.period)
+    }
+
+    @Test
+    fun deleteRemovesTheAccountWithItsPeriodAndEntries() = runTest {
+        val kept = ok(repository.add(car, monthlyStart(50_000)))
+        val saved = ok(repository.add(salary, monthlyStart(250_000)))
+        ok(repository.saveMonthlyEntry(saved.period.id, MonthlyEntry(oct, 200_000)))
+        ok(repository.delete(saved.id))
+        assertEquals(listOf(kept), ok(repository.all()))
+        assertEquals(Outcome.Failed(Reason.Unavailable), repository.get(saved.id))
+        val dao = database.financeAccountDao()
+        assertEquals(null, dao.selectActivePeriod(saved.id))
+        assertEquals(emptyList(), dao.selectEntries(saved.period.id))
     }
 }

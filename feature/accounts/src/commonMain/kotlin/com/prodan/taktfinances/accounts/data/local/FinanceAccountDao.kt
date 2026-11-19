@@ -54,6 +54,20 @@ interface FinanceAccountDao {
     suspend fun selectAllActive(): Triple<List<FinanceAccountEntity>, List<AccountPeriodEntity>, List<MonthlyEntryEntity>> =
         Triple(selectAll(), selectActivePeriods(), selectActiveEntries())
 
+    @Query("UPDATE finance_account SET name = :name WHERE id = :id")
+    suspend fun updateName(id: Long, name: String)
+
+    /** Renames account [id] and, when [entry] is not null, stores it (replacing the same month), all or nothing. */
+    @Transaction
+    suspend fun updateNameAndEntry(id: Long, name: String, entry: MonthlyEntryEntity?) {
+        updateName(id, name)
+        if (entry != null) upsertEntry(entry)
+    }
+
+    /** Removes the account; the foreign keys cascade to its periods and their entries. */
+    @Query("DELETE FROM finance_account WHERE id = :id")
+    suspend fun deleteAccount(id: Long)
+
     @Query("DELETE FROM monthly_entry WHERE period_id = :periodId AND month = :month")
     suspend fun deleteEntry(periodId: Long, month: String)
 

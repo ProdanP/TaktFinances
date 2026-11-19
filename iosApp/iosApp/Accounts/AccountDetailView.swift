@@ -9,8 +9,21 @@ struct AccountDetailView: View {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var model: AccountDetailModel
 
-    init(repository: AccountRepository, accountId: Int64, checkInOnOpen: Bool) {
-        _model = State(initialValue: AccountDetailModel(repository: repository, accountId: accountId, checkInOnOpen: checkInOnOpen))
+    /// `onChanged` follows any edit or check-in change; `onDeleted` gets the card to show next.
+    init(
+        repository: AccountRepository,
+        accountId: Int64,
+        checkInOnOpen: Bool,
+        onChanged: @escaping () -> Void = {},
+        onDeleted: @escaping (Int64?) -> Void = { _ in }
+    ) {
+        _model = State(initialValue: AccountDetailModel(
+            repository: repository,
+            accountId: accountId,
+            checkInOnOpen: checkInOnOpen,
+            onChanged: onChanged,
+            onDeleted: onDeleted
+        ))
     }
 
     var body: some View {
@@ -57,12 +70,56 @@ struct AccountDetailView: View {
         .navigationTitle(loadedName)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { model.send(.shown) }
+        .toolbar { accountActions }
         .sheet(isPresented: sheetPresented) {
             if let sheet = model.state.sheet, case let .loaded(loaded) = model.state.content {
                 CheckInSheetView(sheet: sheet, currency: loaded.currency, palette: palette, send: model.send)
                     .presentationDetents([.medium, .large])
             }
         }
+        .sheet(isPresented: editPresented) {
+            if let edit = model.state.edit, case let .loaded(loaded) = model.state.content {
+                EditAccountSheetView(edit: edit, currency: loaded.currency, palette: palette, send: model.send)
+                    .presentationDetents([.medium, .large])
+            }
+        }
+        .alert("Delete \"\(loadedName)\"?", isPresented: Binding(
+            get: { model.state.confirmDeleteAccount },
+            set: { if !$0 { model.send(.deleteAccountCancelled) } }
+        )) {
+            Button("Delete", role: .destructive) { model.send(.deleteAccountConfirmed) }
+            Button("Cancel", role: .cancel) { model.send(.deleteAccountCancelled) }
+        } message: {
+            Text(AccountDetailState.deleteWarning)
+        }
+        .alert(AccountDetailState.deleteFailedMessage, isPresented: Binding(
+            get: { model.state.deleteFailed },
+            set: { if !$0 { model.send(.deleteFailedDismissed) } }
+        )) {
+            Button("OK", role: .cancel) { model.send(.deleteFailedDismissed) }
+        }
+    }
+
+    /// "Edit" and the menu holding "Delete account", shown once the account has loaded.
+    @ToolbarContentBuilder
+    private var accountActions: some ToolbarContent {
+        if case .loaded = model.state.content {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button("Edit") { model.send(.editTapped) }
+                    .disabled(model.state.deleting)
+                Menu {
+                    Button("Delete account", systemImage: "trash", role: .destructive) { model.send(.deleteAccountTapped) }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("More options")
+                .disabled(model.state.deleting)
+            }
+        }
+    }
+
+    private var editPresented: Binding<Bool> {
+        Binding(get: { model.state.edit != nil }, set: { if !$0 { model.send(.editDismissed) } })
     }
 
     private var loadedName: String {
@@ -318,6 +375,52 @@ private struct BalanceChartView: View {
         guard let first = points.first, let last = points.last else { return "No balance yet" }
         if points.count == 1 { return "Balance for \(first.label): \(first.balanceText) \(currency)" }
         return "Balance, \(points.count) months: \(first.label) \(first.balanceText) \(currency) to \(last.label) \(last.balanceText) \(currency)"
+    }
+}
+
+/// The "Edit account" form shown in a sheet: the name and, for a Monthly account, this month's balance.
+private struct EditAccountSheetView: View {
+    let edit: EditSheetState
+    let currency: String
+    let palette: FinancesColorScheme
+    let send: (AccountDetailIntent) -> Void
+    @FocusState private var amountFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Name") {
+                    TextField("Name", text: Binding(get: { edit.name }, set: { send(.editNameChanged($0)) }))
+                        .textInputAutocapitalization(.sentences)
+                }
+                if edit.showsAmount {
+                    Section("Balance this month") {
+                        HStack {
+                            TextField("0.00", text: Binding(get: { edit.amountText }, set: { send(.editAmountChanged($0)) }))
+                                .keyboardType(.decimalPad)
+                                .focused($amountFocused)
+                                .font(.title3.monospacedDigit())
+                                .accessibilityLabel("Balance this month")
+                            Text(currency).foregroundStyle(palette.onSurfaceVariant)
+                        }
+                    }
+                }
+                if edit.failed {
+                    Section { Text(EditSheetState.saveFailedMessage).foregroundStyle(palette.error) }
+                }
+            }
+            .navigationTitle("Edit account")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { send(.editDismissed) }.disabled(edit.saving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { send(.editSaveTapped) }.disabled(!edit.canSave)
+                }
+            }
+            .onChange(of: amountFocused) { _, focused in send(.editAmountFocusChanged(focused)) }
+        }
     }
 }
 

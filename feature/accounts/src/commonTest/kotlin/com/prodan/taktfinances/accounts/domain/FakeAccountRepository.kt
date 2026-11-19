@@ -15,7 +15,17 @@ class FakeAccountRepository : AccountRepository {
     val starts = mutableListOf<StartingPointPayload>()
     val savedEntries = mutableListOf<Pair<Long, MonthlyEntry>>()
     val deletedMonths = mutableListOf<Pair<Long, YearMonth>>()
+    val edits = mutableListOf<Edit>()
+    val deletedIds = mutableListOf<Long>()
     var failing = false
+
+    /** When set, only [delete] fails, so a test can tell the delete from the reads around it. */
+    var failDelete = false
+
+    /** When set, only [all] fails. */
+    var failAll = false
+
+    data class Edit(val id: Long, val name: String, val periodId: Long, val entry: MonthlyEntry?)
 
     override suspend fun add(account: FinanceAccount, start: StartingPointPayload): Outcome<SavedAccount> {
         if (failing) return Outcome.Failed(Reason.Unavailable)
@@ -29,7 +39,7 @@ class FakeAccountRepository : AccountRepository {
     }
 
     override suspend fun all(): Outcome<List<SavedAccount>> =
-        if (failing) Outcome.Failed(Reason.Unavailable) else Outcome.Ok(accounts.toList())
+        if (failing || failAll) Outcome.Failed(Reason.Unavailable) else Outcome.Ok(accounts.toList())
 
     override suspend fun get(id: Long): Outcome<SavedAccount> {
         if (failing) return Outcome.Failed(Reason.Unavailable)
@@ -45,6 +55,19 @@ class FakeAccountRepository : AccountRepository {
     override suspend fun deleteMonthlyEntry(periodId: Long, month: YearMonth): Outcome<Unit> {
         if (failing) return Outcome.Failed(Reason.Unavailable)
         deletedMonths += periodId to month
+        return Outcome.Ok(Unit)
+    }
+
+    override suspend fun edit(id: Long, name: String, periodId: Long, entry: MonthlyEntry?): Outcome<Unit> {
+        if (failing) return Outcome.Failed(Reason.Unavailable)
+        edits += Edit(id, name, periodId, entry)
+        return Outcome.Ok(Unit)
+    }
+
+    override suspend fun delete(id: Long): Outcome<Unit> {
+        if (failing || failDelete) return Outcome.Failed(Reason.Unavailable)
+        deletedIds += id
+        accounts.removeAll { it.id == id }
         return Outcome.Ok(Unit)
     }
 }

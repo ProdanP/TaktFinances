@@ -11,15 +11,25 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class AccountDetailRoute(val id: Long, val checkIn: Boolean = false) : NavKey
 
-/** The detail pane of My Finances' list-detail layout; [showBack] is false while the list is beside it. */
+/**
+ * The detail pane of My Finances' list-detail layout; [showBack] is false while the list is beside it.
+ * [onAccountChanged] follows any edit or check-in change; [onAccountDeleted] gets the card to show next.
+ */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-internal fun EntryProviderScope<NavKey>.accountDetailEntry(showBack: Boolean, onBack: () -> Unit) {
+internal fun EntryProviderScope<NavKey>.accountDetailEntry(
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onAccountChanged: () -> Unit,
+    onAccountDeleted: (neighbourId: Long?) -> Unit,
+) {
     entry<AccountDetailRoute>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
         AccountDetailScreen(
             accountId = route.id,
             checkInOnOpen = route.checkIn,
             showBack = showBack,
             onBack = onBack,
+            onAccountChanged = onAccountChanged,
+            onAccountDeleted = onAccountDeleted,
         )
     }
 }
