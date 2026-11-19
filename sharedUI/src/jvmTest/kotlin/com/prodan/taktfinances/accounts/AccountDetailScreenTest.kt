@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
@@ -14,8 +15,11 @@ import com.prodan.taktfinances.accounts.domain.entity.BankAccountKind
 import com.prodan.taktfinances.accounts.domain.entity.Currency
 import com.prodan.taktfinances.accounts.domain.entity.FinanceAccount
 import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
+import com.prodan.taktfinances.accounts.domain.entity.InvestmentKind
 import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.DeleteAccountUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.EditAccountUseCase
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +53,15 @@ class AccountDetailScreenTest {
             checkInOnOpen = false,
             showBack = false,
             onBack = {},
-            viewModel = AccountDetailViewModel(id, false, repository, CheckInUseCase(repository), DeleteCheckInUseCase(repository)) { today },
+            viewModel = AccountDetailViewModel(
+                id,
+                false,
+                repository,
+                CheckInUseCase(repository),
+                DeleteCheckInUseCase(repository),
+                EditAccountUseCase(repository),
+                DeleteAccountUseCase(repository),
+            ) { today },
         )
     }
 
@@ -73,5 +85,49 @@ class AccountDetailScreenTest {
         // The header button; November's timeline row has a "Check in" button too.
         onAllNodesWithText("Check in").onFirst().performClick()
         onNodeWithText("Enter this account's balance at the end of the month.").assertExists()
+    }
+
+    @Test
+    fun actionsAreHiddenUntilTheAccountLoads() = runComposeUiTest {
+        val account = repository.insert(salary, listOf(MonthlyEntry(YearMonth(2026, 10), 1_000_000)))
+        repository.failGet = true
+        show(this, account.id)
+        onNodeWithContentDescription("Edit").assertDoesNotExist()
+        onNodeWithContentDescription("More options").assertDoesNotExist()
+        repository.failGet = false
+        onNodeWithText("Try again").performClick()
+        onNodeWithContentDescription("Edit").assertExists()
+        onNodeWithContentDescription("More options").assertExists()
+    }
+
+    @Test
+    fun deleteAccountAsksWithTheBrdText() = runComposeUiTest {
+        val account = repository.insert(salary, listOf(MonthlyEntry(YearMonth(2026, 10), 1_000_000)))
+        show(this, account.id)
+        onNodeWithContentDescription("More options").performClick()
+        onNodeWithText("Delete account").performClick()
+        onNodeWithText("Delete \"Salary\"?").assertExists()
+        onNodeWithText(DELETE_ACCOUNT_WARNING).assertExists()
+        onNodeWithText("Cancel").performClick()
+        onNodeWithText(DELETE_ACCOUNT_WARNING).assertDoesNotExist()
+    }
+
+    @Test
+    fun editSheetShowsNameAndBalance() = runComposeUiTest {
+        val account = repository.insert(salary, listOf(MonthlyEntry(YearMonth(2026, 10), 1_000_000)))
+        show(this, account.id)
+        onNodeWithContentDescription("Edit").performClick()
+        onNodeWithText("Edit account").assertExists()
+        onNodeWithText("Balance this month").assertExists()
+    }
+
+    @Test
+    fun editSheetOfAnInvestmentHasNoAmount() = runComposeUiTest {
+        val brokerage = FinanceAccount("Brokerage", Currency.EUR, AccountDetails.InvestmentDetails(InvestmentKind.StocksEtf, "XTB"), today)
+        val account = repository.insert(brokerage, trades = true)
+        show(this, account.id)
+        onNodeWithContentDescription("Edit").performClick()
+        onNodeWithText("Edit account").assertExists()
+        onNodeWithText("Balance this month").assertDoesNotExist()
     }
 }

@@ -50,4 +50,12 @@ internal class AccountRepositoryImpl(
     override suspend fun deleteMonthlyEntry(periodId: Long, month: YearMonth): Outcome<Unit> = outcomeOf {
         dao.deleteEntry(periodId, month.toString())
     }
+
+    override suspend fun edit(id: Long, name: String, periodId: Long, entry: MonthlyEntry?): Outcome<Unit> = outcomeOf {
+        dao.updateNameAndEntry(id, name, entry?.toDbo(periodId))
+    }
+
+    override suspend fun delete(id: Long): Outcome<Unit> = outcomeOf {
+        dao.deleteAccount(id)
+    }
 }

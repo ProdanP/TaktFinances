@@ -22,4 +22,10 @@ interface AccountRepository {
 
     /** Removes the entry for [month] from the Monthly period [periodId]. */
     suspend fun deleteMonthlyEntry(periodId: Long, month: YearMonth): Outcome<Unit>
+
+    /** Renames account [id] and, when [entry] is not null, stores it in the Monthly period [periodId], all or nothing. */
+    suspend fun edit(id: Long, name: String, periodId: Long, entry: MonthlyEntry?): Outcome<Unit>
+
+    /** Removes account [id] with its periods and entries. */
+    suspend fun delete(id: Long): Outcome<Unit>
 }

@@ -101,7 +101,8 @@ final class HomeModel {
     }
 
     /// A newly added account is selected; otherwise the previous selection is kept while it
-    /// still exists, and the first card is selected when it does not.
+    /// still exists. When it was deleted, its neighbour is selected; the first card only when
+    /// nothing was selected before.
     private func content(for list: [SavedAccount]) -> MyFinancesContent {
         let previousIds = knownIds
         knownIds = Set(list.map(\.id))
@@ -114,6 +115,9 @@ final class HomeModel {
             selectedId = newest
         } else if let previousSelection, list.contains(where: { $0.id == previousSelection }) {
             selectedId = previousSelection
+        } else if let previousSelection,
+                  let neighbour = NeighbourKt.neighbourAfterRemoving(remaining: list, removedId: previousSelection) {
+            selectedId = neighbour.id
         } else {
             selectedId = first.id
         }

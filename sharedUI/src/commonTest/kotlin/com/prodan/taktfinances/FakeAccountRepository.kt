@@ -21,6 +21,18 @@ class FakeAccountRepository : AccountRepository {
     var failGet = false
     var failSave = false
     var failDelete = false
+    var failEdit = false
+    var failDeleteAccount = false
+
+    /** When set, [edit] waits for it. */
+    var editGate: CompletableDeferred<Unit>? = null
+
+    /** When set, [delete] waits for it. */
+    var deleteGate: CompletableDeferred<Unit>? = null
+    var editCalls = 0
+        private set
+    var deleteCalls = 0
+        private set
 
     /** When set, [add] waits for it, so a test can observe a save in progress. */
     var addGate: CompletableDeferred<Unit>? = null
@@ -85,6 +97,26 @@ class FakeAccountRepository : AccountRepository {
     override suspend fun deleteMonthlyEntry(periodId: Long, month: YearMonth): Outcome<Unit> {
         if (failDelete) return Outcome.Failed(Reason.Unavailable)
         updateEntries(periodId) { entries -> entries.filter { it.month != month } }
+        return Outcome.Ok(Unit)
+    }
+
+    override suspend fun edit(id: Long, name: String, periodId: Long, entry: MonthlyEntry?): Outcome<Unit> {
+        editCalls++
+        editGate?.await()
+        if (failEdit) return Outcome.Failed(Reason.Unavailable)
+        val index = saved.indexOfFirst { it.id == id }
+        saved[index] = saved[index].copy(account = saved[index].account.copy(name = name))
+        if (entry != null) {
+            updateEntries(periodId) { entries -> (entries.filter { it.month != entry.month } + entry).sortedBy { it.month } }
+        }
+        return Outcome.Ok(Unit)
+    }
+
+    override suspend fun delete(id: Long): Outcome<Unit> {
+        deleteCalls++
+        deleteGate?.await()
+        if (failDeleteAccount) return Outcome.Failed(Reason.Unavailable)
+        remove(id)
         return Outcome.Ok(Unit)
     }
 

@@ -17,7 +17,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -35,12 +39,22 @@ internal fun HomeScreen(
     destination: HomeDestination,
     onNavigateToAddAccount: () -> Unit,
     onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
+    accountsVersion: Int = 0,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Reload on every start, so returning from Add Account shows (and selects) the new account,
     // and returning from Account Detail shows its new balance.
     LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onIntent(HomeIntent.Shown) }
+    // Account Detail beside this screen leaves it started, so a change made there arrives as a new
+    // accountsVersion instead. A fresh composition starts from the current version: ON_START loads it.
+    var loadedVersion by remember { mutableIntStateOf(accountsVersion) }
+    LaunchedEffect(accountsVersion) {
+        if (accountsVersion != loadedVersion) {
+            loadedVersion = accountsVersion
+            viewModel.onIntent(HomeIntent.Shown)
+        }
+    }
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             HomeEffect.OpenAddAccount -> onNavigateToAddAccount()

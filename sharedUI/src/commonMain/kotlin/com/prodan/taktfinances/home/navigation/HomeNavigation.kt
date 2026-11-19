@@ -18,6 +18,7 @@ internal data class HomeRoute(val destination: HomeDestination = HomeDestination
 internal fun EntryProviderScope<NavKey>.homeEntry(
     onNavigateToAddAccount: () -> Unit,
     onNavigateToAccount: (id: Long, checkIn: Boolean) -> Unit,
+    accountsVersion: Int,
 ) {
     entry<HomeRoute>(
         metadata = { route ->
@@ -32,6 +33,7 @@ internal fun EntryProviderScope<NavKey>.homeEntry(
             destination = route.destination,
             onNavigateToAddAccount = onNavigateToAddAccount,
             onNavigateToAccount = onNavigateToAccount,
+            accountsVersion = accountsVersion,
         )
     }
 }

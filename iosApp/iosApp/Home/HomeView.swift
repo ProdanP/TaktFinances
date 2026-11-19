@@ -73,7 +73,17 @@ struct HomeView: View {
                 destinationBody(.myfinances, palette: palette)
             } detail: {
                 if let opened {
-                    AccountDetailView(repository: repository, accountId: opened.id, checkInOnOpen: opened.checkIn)
+                    AccountDetailView(
+                        repository: repository,
+                        accountId: opened.id,
+                        checkInOnOpen: opened.checkIn,
+                        onChanged: { model.send(.shown) },
+                        onDeleted: { neighbourId in
+                            model.send(.shown)
+                            // The detail column moves to the neighbour, or to the placeholder when none is left.
+                            self.opened = neighbourId.map { OpenedAccount(id: $0, checkIn: false, token: UUID()) }
+                        }
+                    )
                         .id(opened)
                 } else {
                     accountPlaceholder(palette: palette)

@@ -11,9 +11,12 @@ import com.prodan.taktfinances.accounts.domain.entity.MonthlyEntry
 import com.prodan.taktfinances.accounts.domain.entity.Period
 import com.prodan.taktfinances.accounts.domain.entity.SavedAccount
 import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.DeleteAccountUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.EditAccountUseCase
 import com.prodan.taktfinances.accounts.models.AccountDetailContent
 import com.prodan.taktfinances.accounts.models.ChartRange
+import com.prodan.taktfinances.accounts.models.EDIT_SAVE_FAILED_MESSAGE
 import com.prodan.taktfinances.accounts.models.SheetError
 import com.prodan.taktfinances.theme.ChangeDirection
 import kotlin.test.AfterTest
@@ -27,6 +30,8 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -59,10 +64,25 @@ class AccountDetailViewModelTest {
     private val repository = FakeAccountRepository()
 
     private fun open(account: SavedAccount, checkIn: Boolean = false): AccountDetailViewModel =
-        AccountDetailViewModel(account.id, checkIn, repository, CheckInUseCase(repository), DeleteCheckInUseCase(repository)) { today }.also { it.onIntent(AccountDetailIntent.Shown) }
+        AccountDetailViewModel(
+            account.id,
+            checkIn,
+            repository,
+            CheckInUseCase(repository),
+            DeleteCheckInUseCase(repository),
+            EditAccountUseCase(repository),
+            DeleteAccountUseCase(repository),
+        ) { today }.also { it.onIntent(AccountDetailIntent.Shown) }
 
     private val AccountDetailViewModel.loaded get() = assertIs<AccountDetailContent.Loaded>(state.value.content)
     private val AccountDetailViewModel.sheet get() = assertNotNull(state.value.sheet)
+    private val AccountDetailViewModel.edit get() = assertNotNull(state.value.edit)
+
+    /** Every effect [vm] sends from now on, collected for the rest of the test. */
+    private fun TestScope.effectsOf(vm: AccountDetailViewModel): List<AccountDetailEffect> =
+        mutableListOf<AccountDetailEffect>().also { list ->
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.effects.collect { list += it } }
+        }
 
     @Test
     fun loadsHeaderTimelineAndChart() {
@@ -244,5 +264,183 @@ class AccountDetailViewModelTest {
         vm.onIntent(AccountDetailIntent.CheckInTapped)
         assertNull(vm.state.value.sheet)
         assertIs<Period.Transactions>(vm.loaded.account.period)
+    }
+
+    @Test
+    fun checkInSaveAndDeleteReportAChange() = runTest {
+        val vm = open(repository.insert(salary, salaryEntries))
+        val effects = effectsOf(vm)
+        vm.onIntent(AccountDetailIntent.CheckInTapped)
+        vm.onIntent(AccountDetailIntent.AmountChanged("1"))
+        vm.onIntent(AccountDetailIntent.SaveTapped)
+        vm.onIntent(AccountDetailIntent.MonthTapped(month(10)))
+        vm.onIntent(AccountDetailIntent.DeleteTapped)
+        vm.onIntent(AccountDetailIntent.DeleteConfirmed)
+        assertEquals(listOf(AccountDetailEffect.AccountChanged, AccountDetailEffect.AccountChanged), effects)
+    }
+
+    @Test
+    fun editOpensWithNameAndCurrentBalance() {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        assertEquals("Salary", vm.edit.name)
+        assertEquals("12340.00", vm.edit.amount)
+        assertEquals("12,340.00", vm.edit.amountText)
+        assertTrue(vm.edit.showsAmount)
+        assertTrue(vm.edit.canSave)
+    }
+
+    @Test
+    fun editOfAnInvestmentHasNoAmount() {
+        val brokerage = FinanceAccount("Brokerage", Currency.EUR, AccountDetails.InvestmentDetails(InvestmentKind.StocksEtf, "XTB"), today)
+        val vm = open(repository.insert(brokerage, trades = true))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        assertFalse(vm.edit.showsAmount)
+        assertTrue(vm.edit.canSave)
+    }
+
+    @Test
+    fun dismissingTheEditChangesNothing() {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("Daily"))
+        vm.onIntent(AccountDetailIntent.EditDismissed)
+        assertNull(vm.state.value.edit)
+        assertEquals("Salary", vm.loaded.header.name)
+        assertEquals(0, repository.editCalls)
+    }
+
+    @Test
+    fun blankNameOrAmountDisablesSave() {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("  "))
+        assertFalse(vm.edit.canSave)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("Daily"))
+        vm.onIntent(AccountDetailIntent.EditAmountChanged(""))
+        assertFalse(vm.edit.canSave)
+        vm.onIntent(AccountDetailIntent.EditAmountChanged("12a3,456"))
+        assertEquals("123.45", vm.edit.amount)
+    }
+
+    @Test
+    fun savedEditUpdatesTheScreenAndReportsIt() = runTest {
+        // November not checked in: it carries October's 10,810.00 forward.
+        val vm = open(repository.insert(salary, salaryEntries.dropLast(1)))
+        val effects = effectsOf(vm)
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("  Daily card "))
+        vm.onIntent(AccountDetailIntent.EditAmountChanged("12340"))
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        assertNull(vm.state.value.edit)
+        assertEquals("Daily card", vm.loaded.header.name)
+        assertEquals("12,340.00", vm.loaded.header.balance)
+        assertTrue(vm.loaded.timeline!!.first().checkedIn)
+        assertEquals(listOf(AccountDetailEffect.AccountChanged), effects)
+    }
+
+    @Test
+    fun renameOnlyKeepsACarriedMonthUnchecked() {
+        val vm = open(repository.insert(salary, salaryEntries.dropLast(1)))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("Daily card"))
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        assertEquals("Daily card", vm.loaded.header.name)
+        assertFalse(vm.loaded.timeline!!.first().checkedIn)
+    }
+
+    @Test
+    fun unchangedEditStoresNothing() = runTest {
+        val vm = open(repository.insert(salary, salaryEntries))
+        val effects = effectsOf(vm)
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        assertNull(vm.state.value.edit)
+        assertEquals(0, repository.editCalls)
+        assertTrue(effects.isEmpty())
+    }
+
+    @Test
+    fun failedEditKeepsTheSheet() {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        repository.failEdit = true
+        vm.onIntent(AccountDetailIntent.EditNameChanged("Daily"))
+        vm.onIntent(AccountDetailIntent.EditAmountChanged("3000"))
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        assertTrue(vm.edit.failed)
+        assertEquals("Couldn't save the changes. Try again.", EDIT_SAVE_FAILED_MESSAGE)
+        assertEquals("Daily", vm.edit.name)
+        assertEquals("3000", vm.edit.amount)
+        assertFalse(vm.edit.saving)
+        assertEquals("Salary", vm.loaded.header.name)
+        assertEquals("12,340.00", vm.loaded.header.balance)
+    }
+
+    @Test
+    fun doubleTapEditSavesOnce() = runTest {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.EditNameChanged("Daily"))
+        val gate = CompletableDeferred<Unit>()
+        repository.editGate = gate
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        vm.onIntent(AccountDetailIntent.EditSaveTapped)
+        assertTrue(vm.edit.saving)
+        gate.complete(Unit)
+        assertEquals(1, repository.editCalls)
+    }
+
+    @Test
+    fun deleteAccountAsksThenCancels() {
+        val vm = open(repository.insert(salary, salaryEntries))
+        vm.onIntent(AccountDetailIntent.DeleteAccountTapped)
+        assertTrue(vm.state.value.confirmDeleteAccount)
+        vm.onIntent(AccountDetailIntent.DeleteAccountCancelled)
+        assertFalse(vm.state.value.confirmDeleteAccount)
+        assertEquals(0, repository.deleteCalls)
+    }
+
+    @Test
+    fun confirmedDeleteReportsTheNeighbour() = runTest {
+        repository.insert(salary)
+        val middle = repository.insert(salary.copy(name = "Brokerage"))
+        val last = repository.insert(salary.copy(name = "Car loan"))
+        val vm = open(middle)
+        val effects = effectsOf(vm)
+        vm.onIntent(AccountDetailIntent.DeleteAccountTapped)
+        vm.onIntent(AccountDetailIntent.DeleteAccountConfirmed)
+        assertEquals(listOf<AccountDetailEffect>(AccountDetailEffect.AccountDeleted(last.id)), effects)
+        assertEquals(2, repository.saved.size)
+    }
+
+    @Test
+    fun failedDeleteKeepsTheAccount() = runTest {
+        val vm = open(repository.insert(salary, salaryEntries))
+        val effects = effectsOf(vm)
+        repository.failDeleteAccount = true
+        vm.onIntent(AccountDetailIntent.DeleteAccountTapped)
+        vm.onIntent(AccountDetailIntent.DeleteAccountConfirmed)
+        assertEquals(listOf<AccountDetailEffect>(AccountDetailEffect.DeleteFailed), effects)
+        assertFalse(vm.state.value.deleting)
+        assertEquals("Salary", vm.loaded.header.name)
+        assertEquals(1, repository.saved.size)
+    }
+
+    @Test
+    fun deleteInProgressBlocksEditAndAnotherDelete() = runTest {
+        val vm = open(repository.insert(salary, salaryEntries))
+        val gate = CompletableDeferred<Unit>()
+        repository.deleteGate = gate
+        vm.onIntent(AccountDetailIntent.DeleteAccountTapped)
+        vm.onIntent(AccountDetailIntent.DeleteAccountConfirmed)
+        assertTrue(vm.state.value.deleting)
+        vm.onIntent(AccountDetailIntent.EditTapped)
+        vm.onIntent(AccountDetailIntent.DeleteAccountTapped)
+        vm.onIntent(AccountDetailIntent.DeleteAccountConfirmed)
+        assertNull(vm.state.value.edit)
+        assertFalse(vm.state.value.confirmDeleteAccount)
+        gate.complete(Unit)
+        assertEquals(1, repository.deleteCalls)
     }
 }

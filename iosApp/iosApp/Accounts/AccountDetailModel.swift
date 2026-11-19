@@ -96,10 +96,37 @@ struct CheckInSheetState {
     var amountText: String { amountFocused ? amount : (AmountInputKt.formatAmountInput(text: amount) ?? "") }
 }
 
+/// The "Edit account" sheet. `showsAmount` is false for an account tracked by trades (name only).
+struct EditSheetState {
+    static let saveFailedMessage = "Couldn't save the changes. Try again."
+
+    var name: String
+    var amount: String
+    let showsAmount: Bool
+    var amountFocused = false
+    var saving = false
+    /// Storing the changes failed; the sheet keeps what the user entered.
+    var failed = false
+
+    var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && (!showsAmount || ChangeFormatKt.isAmount(text: amount)) && !saving
+    }
+    var amountText: String { amountFocused ? amount : (AmountInputKt.formatAmountInput(text: amount) ?? "") }
+}
+
 struct AccountDetailState {
+    static let deleteFailedMessage = "Couldn't delete the account. Try again."
+    static let deleteWarning = "This removes the account and all its history, including past months on the Dashboard. This can't be undone."
+
     var content: AccountDetailContent = .loading
     var range: ChartRange = .sixMonths
     var sheet: CheckInSheetState?
+    var edit: EditSheetState?
+    var confirmDeleteAccount = false
+    /// A confirmed delete is running; Edit and Delete account do nothing meanwhile.
+    var deleting = false
+    var deleteFailed = false
 
     var chart: [ChartPoint] {
         guard case let .loaded(loaded) = content else { return [] }
@@ -133,6 +160,18 @@ enum AccountDetailIntent {
     case deleteConfirmed
     case deleteCancelled
     case sheetDismissed
+    /// "Edit" in the toolbar: the "Edit account" sheet.
+    case editTapped
+    case editNameChanged(String)
+    case editAmountChanged(String)
+    case editAmountFocusChanged(Bool)
+    case editSaveTapped
+    case editDismissed
+    /// "Delete account" in the menu: asks for confirmation.
+    case deleteAccountTapped
+    case deleteAccountConfirmed
+    case deleteAccountCancelled
+    case deleteFailedDismissed
 }
 
 /// Account Detail for one account. The rules (month-end balances, months offered, what may be
@@ -144,14 +183,30 @@ final class AccountDetailModel {
     private let accountId: Int64
     private let checkIn: CheckInUseCase
     private let deleteCheckIn: DeleteCheckInUseCase
+    private let editAccount: EditAccountUseCase
+    private let deleteAccount: DeleteAccountUseCase
     private var pendingCheckIn: Bool
+    /// The account or one of its entries changed; My Finances should read the accounts again.
+    private let onChanged: () -> Void
+    /// The account is gone; the argument is the card to show next, nil when none is left.
+    private let onDeleted: (Int64?) -> Void
 
-    init(repository: AccountRepository, accountId: Int64, checkInOnOpen: Bool) {
+    init(
+        repository: AccountRepository,
+        accountId: Int64,
+        checkInOnOpen: Bool,
+        onChanged: @escaping () -> Void = {},
+        onDeleted: @escaping (Int64?) -> Void = { _ in }
+    ) {
         self.repository = repository
         self.accountId = accountId
         checkIn = CheckInUseCase(repository: repository)
         deleteCheckIn = DeleteCheckInUseCase(repository: repository)
+        editAccount = EditAccountUseCase(repository: repository)
+        deleteAccount = DeleteAccountUseCase(repository: repository)
         pendingCheckIn = checkInOnOpen
+        self.onChanged = onChanged
+        self.onDeleted = onDeleted
     }
 
     func send(_ intent: AccountDetailIntent) {
@@ -187,6 +242,28 @@ final class AccountDetailModel {
             delete()
         case .sheetDismissed:
             if state.sheet?.saving != true { state.sheet = nil }
+        case .editTapped:
+            openEdit()
+        case let .editNameChanged(value):
+            state.edit?.name = value
+            state.edit?.failed = false
+        case let .editAmountChanged(value):
+            state.edit?.amount = AmountInputKt.filterAmountInput(raw: value)
+            state.edit?.failed = false
+        case let .editAmountFocusChanged(focused):
+            state.edit?.amountFocused = focused
+        case .editSaveTapped:
+            saveEdit()
+        case .editDismissed:
+            if state.edit?.saving != true { state.edit = nil }
+        case .deleteAccountTapped:
+            if loaded != nil && !state.deleting { state.confirmDeleteAccount = true }
+        case .deleteAccountCancelled:
+            state.confirmDeleteAccount = false
+        case .deleteAccountConfirmed:
+            removeAccount()
+        case .deleteFailedDismissed:
+            state.deleteFailed = false
         }
     }
 
@@ -277,6 +354,7 @@ final class AccountDetailModel {
             if result is CheckInResultSaved {
                 state.sheet = nil
                 load()
+                onChanged()
             } else {
                 state.sheet?.saving = false
                 if !(result is CheckInResultInvalid) { state.sheet?.error = .saveFailed }
@@ -293,9 +371,56 @@ final class AccountDetailModel {
             if result is DeleteCheckInResultDeleted {
                 state.sheet = nil
                 load()
+                onChanged()
             } else {
                 state.sheet?.saving = false
                 if !(result is DeleteCheckInResultInvalid) { state.sheet?.error = .deleteFailed }
+            }
+        }
+    }
+
+    /// Opens the "Edit account" sheet filled with the name and, for a Monthly account, the current balance.
+    private func openEdit() {
+        guard let account = loaded?.account, !state.deleting else { return }
+        let monthly = account.period is PeriodMonthly
+        state.edit = EditSheetState(
+            name: account.account.name,
+            amount: monthly ? AmountInputKt.amountInputText(minor: account.balanceMinor(today: TodayKt.today())) : "",
+            showsAmount: monthly
+        )
+    }
+
+    private func saveEdit() {
+        guard let edit = state.edit, let account = loaded?.account, edit.canSave, !state.deleting else { return }
+        state.edit?.saving = true
+        state.edit?.failed = false
+        Task { @MainActor in
+            let result = try? await editAccount.invoke(account: account, name: edit.name, amount: edit.amount, today: TodayKt.today())
+            switch result {
+            case is EditAccountResultSaved:
+                state.edit = nil
+                load()
+                onChanged()
+            case is EditAccountResultUnchanged:
+                state.edit = nil
+            default:
+                state.edit?.saving = false
+                if !(result is EditAccountResultInvalid) { state.edit?.failed = true }
+            }
+        }
+    }
+
+    private func removeAccount() {
+        guard loaded != nil, !state.deleting else { return }
+        state.confirmDeleteAccount = false
+        state.deleting = true
+        Task { @MainActor in
+            let result = try? await deleteAccount.invoke(id: accountId)
+            if let deleted = result as? DeleteAccountResultDeleted {
+                onDeleted(deleted.neighbourId?.int64Value)
+            } else {
+                state.deleting = false
+                state.deleteFailed = true
             }
         }
     }

@@ -6,7 +6,9 @@ import com.prodan.taktfinances.accounts.AddAccountViewModel
 import com.prodan.taktfinances.accounts.domain.AccountRepository
 import com.prodan.taktfinances.accounts.domain.usecase.AddAccountUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.CheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.DeleteAccountUseCase
 import com.prodan.taktfinances.accounts.domain.usecase.DeleteCheckInUseCase
+import com.prodan.taktfinances.accounts.domain.usecase.EditAccountUseCase
 import com.prodan.taktfinances.home.HomeViewModel
 import com.prodan.taktfinances.onboarding.LandingViewModel
 import kotlin.test.AfterTest
@@ -30,6 +32,8 @@ class PresentationModuleTest {
                 factoryOf(::AddAccountUseCase)
                 factoryOf(::CheckInUseCase)
                 factoryOf(::DeleteCheckInUseCase)
+                factoryOf(::EditAccountUseCase)
+                factoryOf(::DeleteAccountUseCase)
             }
             modules(accounts, presentationModule)
         }.koin

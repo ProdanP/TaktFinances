@@ -15,6 +15,6 @@ val presentationModule: Module = module {
     viewModel { HomeViewModel(get()) }
     viewModel { AddAccountViewModel(get()) }
     viewModel { (accountId: Long, checkInOnOpen: Boolean) ->
-        AccountDetailViewModel(accountId, checkInOnOpen, get(), get(), get())
+        AccountDetailViewModel(accountId, checkInOnOpen, get(), get(), get(), get(), get())
     }
 }

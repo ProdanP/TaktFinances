@@ -26,7 +26,13 @@ struct ContentView: View {
                         case .addAccount:
                             AddAccountView(repository: dependencies.accountRepository, onClose: { path.removeAll() })
                         case let .account(id, checkIn):
-                            AccountDetailView(repository: dependencies.accountRepository, accountId: id, checkInOnOpen: checkIn)
+                            AccountDetailView(
+                                repository: dependencies.accountRepository,
+                                accountId: id,
+                                checkInOnOpen: checkIn,
+                                // My Finances reloads when it shows again.
+                                onDeleted: { _ in path.removeLast() }
+                            )
                         }
                     }
             }
