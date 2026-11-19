@@ -26,17 +26,17 @@
 ## 5. My Finances and navigation (Compose)
 
 - [x] 5.1 `HomeViewModel.contentFor`: when the previous selection is gone, select `neighbourAfterRemoving(list, previousSelection)`, and the first card only when there was no previous selection. Extend `HomeViewModelTest` with the "Selected account deleted" scenario and the last-card case. Verify `./gradlew :sharedUI:jvmTest` passes.
-- [ ] 5.2 `accountDetailEntry` takes `onAccountChanged` and `onAccountDeleted(neighbourId)`, and `AccountDetailScreen` collects the effects. `App` keeps a saveable `accountsVersion`, passes it through `homeEntry` to `HomeScreen`, which reloads when it changes but not on first composition. On delete, `App` removes the detail route and, when two panes fit and there is a neighbour, adds `AccountDetailRoute(neighbourId)` (design D-5). Verify `./gradlew :sharedUI:jvmTest` passes and, on desktop (`./gradlew :desktopApp:run`) in a wide window: delete a middle account and the detail pane moves to the next one; delete the last remaining account and the placeholder shows; a check-in or edit updates the card beside it at once.
-- [ ] 5.3 On an Android phone or emulator: edit the name and balance of an account and see it on Account Detail and after going back; delete it and land on My Finances with the neighbour selected; restart and confirm it stays deleted.
+- [x] 5.2 `accountDetailEntry` takes `onAccountChanged` and `onAccountDeleted(neighbourId)`, and `AccountDetailScreen` collects the effects. `App` keeps a saveable `accountsVersion`, passes it through `homeEntry` to `HomeScreen`, which reloads when it changes but not on first composition. On delete, `App` removes the detail route and, when two panes fit and there is a neighbour, adds `AccountDetailRoute(neighbourId)` (design D-5). Verify `./gradlew :sharedUI:jvmTest` passes and, on desktop (`./gradlew :desktopApp:run`) in a wide window: delete a middle account and the detail pane moves to the next one; delete the last remaining account and the placeholder shows; a check-in or edit updates the card beside it at once.
+- [x] 5.3 On an Android phone or emulator: edit the name and balance of an account and see it on Account Detail and after going back; delete it and land on My Finances with the neighbour selected; restart and confirm it stays deleted.
 
 ## 6. iOS
 
 - [x] 6.1 `AccountDetailModel`/`AccountDetailView`: the Edit toolbar button and a `Menu` with a destructive "Delete account", shown only when loaded; the edit `.sheet` (name, and "Balance this month" for Monthly) using `EditAccountUseCase`; the confirmation dialog with the BRD text using `DeleteAccountUseCase`; an alert for a failed delete; `onChanged` and `onDeleted(neighbourId)` closures, with `onChanged` also called after check-in saves and deletes. Add `edit` and `delete` to `PreviewAccountRepository`. Verify the app builds for the simulator.
-- [ ] 6.2 `HomeModel.content(for:)` uses `neighbourAfterRemoving` when the previous selection is gone. `ContentView` pops the path on delete. `HomeView` (regular split) reloads on `onChanged` and on `onDeleted` sets `opened` to the neighbour or `nil`. Verify in the iOS simulator, on an iPhone: edit, delete, and land on the neighbour; on an iPad in landscape: delete moves the detail column to the neighbour, and a check-in updates the card beside it.
+- [x] 6.2 `HomeModel.content(for:)` uses `neighbourAfterRemoving` when the previous selection is gone. `ContentView` pops the path on delete. `HomeView` (regular split) reloads on `onChanged` and on `onDeleted` sets `opened` to the neighbour or `nil`. Verify in the iOS simulator, on an iPhone: edit, delete, and land on the neighbour; on an iPad in landscape: delete moves the detail column to the neighbour, and a check-in updates the card beside it.
 
 ## 7. Integration
 
-- [ ] 7.1 Run `./gradlew :feature:accounts:jvmTest :sharedLogic:jvmTest :sharedUI:jvmTest` and `openspec validate add-edit-and-delete-account --strict`, and check every scenario in the three spec deltas has a test or a manual check from the tasks above. Verify all pass.
+- [x] 7.1 Run `./gradlew :feature:accounts:jvmTest :sharedLogic:jvmTest :sharedUI:jvmTest` and `openspec validate add-edit-and-delete-account --strict`, and check every scenario in the three spec deltas has a test or a manual check from the tasks above. Verify all pass.
 
 ## Workflow follow-up
 
